@@ -10,6 +10,7 @@ Debug/
 *.exe
 *.obj
 *.log
+*.zip
 
 # Visual Studio files
 .vs/
