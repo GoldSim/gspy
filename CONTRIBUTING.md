@@ -28,7 +28,7 @@ When reporting bugs, please include:
    - Sample `gspy_script.py` that demonstrates the issue
    - GoldSim model file (if applicable)
 
-### 💡 Suggesting Enhancements
+### Suggesting Enhancements
 
 For feature requests, please provide:
 
@@ -37,7 +37,7 @@ For feature requests, please provide:
 3. **Examples**: Sample code or scenarios
 4. **Impact**: Who would benefit from this feature?
 
-### 🔧 Contributing Code
+### Contributing Code
 
 #### Development Setup
 

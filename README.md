@@ -1,6 +1,6 @@
 # GSPy - GoldSim Python Interface
 
-A robust, modern DLL interface that enables seamless integration between GoldSim and Python, allowing complex calculations to be implemented in Python while maintaining full integration with GoldSim simulations.
+A DLL interface that enables integration between GoldSim and Python, allowing complex calculations to be implemented in Python while maintaining full integration with GoldSim simulations.
 
 ## IMPORTANT DISCLAIMER
 
@@ -110,6 +110,7 @@ The `examples/` directory contains working examples for common use cases:
 - **`3_vector_to_scalar.py`**: Vector input → scalar output (e.g., statistical analysis)
 - **`4_lookup_table_1d.py`**: 1D interpolation and lookup tables
 - **`5_timeseries_to_scalar.py`**: Time series input → scalar output (e.g., statistical analysis)
+- **`6_numpy_statistics.py`**: Includes the numpy library
 
 To use an example:
 1. Copy the desired example file to your model directory
