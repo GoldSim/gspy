@@ -1,0 +1,45 @@
+# Build outputs
+bin/
+x64/
+Release/
+Debug/
+*.dll
+*.lib
+*.exp
+*.pdb
+*.exe
+*.obj
+*.log
+
+# Visual Studio files
+.vs/
+.vscode/
+*.vcxproj.user
+*.sln.docstates
+
+# Temporary files
+*.tmp
+*.temp
+*~
+UpgradeLog.htm
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Log files
+*.txt
+gspy_log.txt
+
+# Test files (keep examples and gsm directories)
+test_environment/
+gspy_script.py
+
+# Development scripts
+build_*.bat
+copy_*.bat
+*.cmake
+CMakeFiles/
+CMakeCache.txt
