@@ -1,9 +1,6 @@
 # GSPy Example Scripts
 
-This directory contains working example Python scripts demonstrating various inpu- **Use NumPy**: For numerical computations, NumPy provides better performance and advanced functions
-- **Debug with prints**: Use `print()` statements - output appears in GoldSim's console
-- **Import libraries**: Popular libraries like NumPy, SciPy, Pandas work seamlessly
-- **Handle exceptions**: Use try-except blocks to provide graceful error handlingoutput patterns with the GSPy DLL.
+This directory contains working example Python scripts demonstrating various input/output patterns with the GSPy DLL.
 
 ## How to Use an Example
 
@@ -13,9 +10,9 @@ This directory contains working example Python scripts demonstrating various inp
 
 3. **Important:** Rename the copied file to exactly `gspy_script.py`
 
-4. **Configure GoldSim:** The GSPy DLL features **automatic I/O detection**! The DLL automatically determines the correct number of inputs and outputs by calling the `gspy_info()` function in your script
+4. **Configure GoldSim:** Zero configuration required! The GSPy DLL features **automatic I/O detection** - it automatically determines the correct number of inputs and outputs by calling the `gspy_info()` function in your script
 
-5. **Run your GoldSim model**
+5. **Run your GoldSim model** - Everything works automatically!
 
 ## Available Examples
 

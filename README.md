@@ -12,8 +12,8 @@ GSPy provides a bridge between GoldSim's External Element and Python scripts, fe
 
 ### Key Features
 
-- **Convention-based script loading**: Automatically loads `gspy_script.py` from the DLL directory
-- **Automatic I/O detection**: DLL automatically determines input/output counts via `gspy_info()`
+- **Zero Configuration**: Automatically loads `gspy_script.py` and detects interface requirements
+- **Automatic I/O detection**: No manual setup - GSPy reads your script's `gspy_info()` function
 - **Robust GIL management**: Proper Global Interpreter Lock handling prevents access violations
 - **Multiple data types**: Support for scalar, vector, and time series data (input only)
 - **Comprehensive error handling**: Detailed logging and error reporting
@@ -41,10 +41,9 @@ GSPy provides a bridge between GoldSim's External Element and Python scripts, fe
 
 3. **Configure GoldSim External Element**:
    - DLL Path: `GSPy.dll`
-   - Number of Inputs: Auto-detected (or specify manually)
-   - Number of Outputs: Auto-detected (or specify manually)
+   - Configuration: **Fully Automatic!** GSPy reads your script's `gspy_info()` function to configure inputs/outputs
 
-4. **Run your simulation** - GSPy will automatically load and execute your Python script.
+4. **Run your simulation** - GSPy automatically loads and executes your Python script with zero configuration required!
 
 ## Requirements
 

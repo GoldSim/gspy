@@ -11,6 +11,7 @@ Debug/
 *.obj
 *.log
 *.zip
+GSPY_Binaries/
 
 # Visual Studio files
 .vs/

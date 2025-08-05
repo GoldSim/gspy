@@ -30,7 +30,7 @@ def goldsim_calculate(inputs):
 ### Step 3: Configure GoldSim
 1. Add an **External Element** to your model
 2. Set **DLL Path** to: `GSPy.dll`
-3. **Inputs/Outputs**: Let GSPy auto-detect, or set manually (1 input, 1 output)
+3. **Configuration**: None needed! GSPy automatically detects inputs/outputs from your script
 4. Connect your input and output to other elements
 
 ### Step 4: Run

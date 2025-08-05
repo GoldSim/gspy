@@ -1,4 +1,10 @@
-# Security Guidelines for GSPy
+# Security Guideline### ✅ Python Integration Security
+- **Process Integration**: Python code runs within the GoldSim process boundary
+- **Memory Management**: Proper Python GIL (Global Interpreter Lock) handling
+- **Resource Cleanup**: Automatic cleanup of Python objects and memory
+- **Exception Boundaries**: Robust exception handling prevents crashes
+
+**⚠️ IMPORTANT**: Python scripts have full system access and are NOT sandboxed. Users must review all Python code for security implications. GSPy
 
 ## DISCLAIMER
 
@@ -55,6 +61,23 @@ GSPy has been designed with security and system safety as primary concerns. This
 - **No Network Access**: GSPy itself makes no network connections
 - **Library Dependencies**: Python libraries may access network (NumPy, SciPy are safe)
 - **User Responsibility**: Any network access is controlled by user's Python scripts
+
+## Python Script Security
+
+### ⚠️ **Critical Security Notice**
+Python scripts executed by GSPy have **full system access** and are **NOT sandboxed**. Scripts can:
+- Access any file on the system
+- Make network connections
+- Execute system commands (via `os.system`, `subprocess`, etc.)
+- Import and use any Python library
+- Modify system settings (if user has permissions)
+
+### **Security Recommendations**
+1. **Code Review**: Always review Python scripts before deployment
+2. **Source Control**: Use trusted sources for Python scripts only
+3. **Test Environment**: Test scripts in isolated environments first
+4. **Least Privilege**: Run GoldSim with minimal user permissions
+5. **Network Monitoring**: Monitor network activity if scripts access external resources
 
 ## Corporate Environment Compatibility
 
