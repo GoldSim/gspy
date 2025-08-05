@@ -45,6 +45,67 @@ GSPy provides a bridge between GoldSim's External Element and Python scripts, fe
 
 4. **Run your simulation** - GSPy automatically loads and executes your Python script with zero configuration required!
 
+### Adding More Inputs and Outputs
+
+To handle multiple inputs and outputs, simply update the counts in `gspy_info()` and add corresponding logic:
+
+```python
+def gspy_info():
+    """Example with 3 inputs and 2 outputs."""
+    return {'inputs': 3, 'outputs': 2}
+
+def goldsim_calculate(inputs):
+    """Handle multiple inputs and outputs."""
+    # Access inputs by key: input1, input2, input3, etc.
+    value1 = inputs.get('input1', 0.0)
+    value2 = inputs.get('input2', 0.0) 
+    value3 = inputs.get('input3', 0.0)
+    
+    # Perform calculations
+    result1 = value1 + value2
+    result2 = value1 * value3
+    
+    # Return outputs by key: output1, output2, etc.
+    return {
+        'output1': result1,
+        'output2': result2
+    }
+```
+
+**Key Points**:
+- Input keys are always `input1`, `input2`, `input3`, etc.
+- Output keys are always `output1`, `output2`, `output3`, etc.
+- The number of inputs/outputs in `gspy_info()` must match what you access in `goldsim_calculate()`
+- **The `.get()` method**: `inputs.get('input1', 0.0)` safely retrieves the value or returns `0.0` if the key doesn't exist, preventing crashes
+
+### Error Reporting
+
+GSPy automatically captures Python exceptions and reports them to GoldSim as error messages. When an error occurs in your script, GoldSim will display the Python error message in a popup dialog.
+
+```python
+def goldsim_calculate(inputs):
+    """Example with error handling."""
+    try:
+        value = inputs.get('input1', 0.0)
+        
+        # Your calculation logic here
+        if value < 0:
+            raise ValueError("Input value cannot be negative")
+            
+        result = value * 2.0 + 10.0
+        return {'output1': result}
+        
+    except Exception as e:
+        # GSPy will automatically catch this exception and show it to the user
+        raise RuntimeError(f"Calculation failed: {str(e)}")
+```
+
+**How it works**:
+- Any unhandled Python exception in `goldsim_calculate()` is caught by GSPy
+- The error message is automatically forwarded to GoldSim
+- GoldSim displays the error in a popup dialog
+- No special error handling functions are needed - just use standard Python exceptions
+
 ## Requirements
 
 - **Python 3.13** (or compatible version)
