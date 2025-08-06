@@ -1,5 +1,11 @@
 # Contributing to GSPy
 
+## What GSPy Is (and Is Not)
+
+**What GSPy Is**: A lightweight, open-source C++ bridge that connects GoldSim to a user's own standard Python environment. It is provided as a utility for advanced users.
+
+**What GSPy Is Not**: GSPy is **not** a formal GoldSim product, a Python distribution, or a formally supported tool. GoldSim support cannot provide assistance for custom Python code, library usage, or environment configuration issues.
+
 Thank you for your interest in contributing to GSPy! This document provides guidelines for contributing to the project.
 
 ## Code of Conduct
@@ -99,7 +105,7 @@ For feature requests, please provide:
    - Add or update example documentation
    - Update CHANGELOG.md
 
-### 📚 Documentation Contributions
+### Documentation Contributions
 
 Documentation improvements are always welcome:
 
@@ -108,7 +114,7 @@ Documentation improvements are always welcome:
 - Improve setup instructions
 - Translate documentation (if applicable)
 
-### 🧪 Example Contributions
+### Example Contributions
 
 New examples are valuable contributions:
 

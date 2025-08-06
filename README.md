@@ -2,6 +2,12 @@
 
 A DLL interface that enables integration between GoldSim and Python, allowing complex calculations to be implemented in Python while maintaining full integration with GoldSim simulations.
 
+## What GSPy Is (and Is Not)
+
+**What GSPy Is**: A lightweight, open-source C++ bridge that connects GoldSim to a user's own standard Python environment. It is provided as a utility for advanced users.
+
+**What GSPy Is Not**: GSPy is **not** a formal GoldSim product, a Python distribution, or a formally supported tool. GoldSim support cannot provide assistance for custom Python code, library usage, or environment configuration issues.
+
 ## IMPORTANT DISCLAIMER
 
 **USE AT YOUR OWN RISK**: GSPy is provided "as is" without any warranty. Users are responsible for thorough testing and validation in their specific environment before production use. See [LICENSE](LICENSE) and [SECURITY.md](SECURITY.md) for complete terms and security considerations.

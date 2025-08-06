@@ -1,5 +1,11 @@
 # Security Guidelines for GSPy
 
+## What GSPy Is (and Is Not)
+
+**What GSPy Is**: A lightweight, open-source C++ bridge that connects GoldSim to a user's own standard Python environment. It is provided as a utility for advanced users.
+
+**What GSPy Is Not**: GSPy is **not** a formal GoldSim product, a Python distribution, or a formally supported tool. GoldSim support cannot provide assistance for custom Python code, library usage, or environment configuration issues.
+
 ## DISCLAIMER
 
 **USE AT YOUR OWN RISK**: GSPy is provided "as is" without warranty of any kind. Users assume full responsibility for testing, validation, and deployment in their specific environments. GoldSim Technology Group and contributors shall not be liable for any damages, data loss, system issues, or other consequences arising from the use of this software.
