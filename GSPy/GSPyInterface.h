@@ -30,8 +30,10 @@ struct gs_OutputStruct {
 
 // Main GoldSim-facing API functions
 // Note: gs_DoCalculation automatically loads gspy_script.py from DLL directory
+GSPY_API bool gs_Initialize(const char* scriptPath, char* errorMsg, int errorMsgSize);
+GSPY_API bool gs_SetScriptPath(const char* scriptPath, char* errorMsg, int errorMsgSize);
 GSPY_API void gs_Finalize();
-GSPY_API void gs_DoCalculation(int methodID, int* status, double* inargs, double* outargs);
+GSPY_API bool gs_DoCalculation(gs_InputStruct* inputs, gs_OutputStruct* outputs);
 
 // I/O metadata functions
 GSPY_API int gs_GetNumberOfInputs();

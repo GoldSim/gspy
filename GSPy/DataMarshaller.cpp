@@ -1,3 +1,4 @@
+#include "common.h"
 #include "DataMarshaller.h"
 #include "DiagnosticsManager.h"
 #include <cstring>
@@ -183,7 +184,6 @@ PyObject* DataMarshaller::MarshalTimeSeries(const double* time, const double* va
         DiagnosticsManager::Instance().LogDebug("pandas not available, falling back to dict for time series marshalling.");
         PyErr_Clear();
     }
-    
     // Fallback to dict
     PyObject* pyTime = PyList_New(size);
     PyObject* pyValue = PyList_New(size);
@@ -197,86 +197,6 @@ PyObject* DataMarshaller::MarshalTimeSeries(const double* time, const double* va
     Py_DECREF(pyTime);
     Py_DECREF(pyValue);
     return dict;
-}
-
-bool DataMarshaller::UnmarshalTimeSeries(PyObject* obj, double* time, double* value, npy_intp expected_size, std::string& errorMsg) {
-    // Try pandas Series/DataFrame first
-    if (obj && PyObject_HasAttrString(obj, "index") && PyObject_HasAttrString(obj, "values")) {
-        PyObject* pyIndex = PyObject_GetAttrString(obj, "index");
-        PyObject* pyValues = PyObject_GetAttrString(obj, "values");
-        PyObject* indexArr = PyArray_FROM_OTF(pyIndex, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY);
-        PyObject* valueArr = PyArray_FROM_OTF(pyValues, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY);
-        Py_DECREF(pyIndex);
-        Py_DECREF(pyValues);
-        
-        if (!indexArr || !valueArr) {
-            errorMsg = "Failed to convert pandas index/values to NumPy arrays.";
-            DiagnosticsManager::Instance().LogError(errorMsg);
-            Py_XDECREF(indexArr);
-            Py_XDECREF(valueArr);
-            return false;
-        }
-        
-        PyArrayObject* idxArr = (PyArrayObject*)indexArr;
-        PyArrayObject* valArr = (PyArrayObject*)valueArr;
-        npy_intp nidx = PyArray_SIZE(idxArr);
-        npy_intp nval = PyArray_SIZE(valArr);
-        
-        if (nidx != expected_size || nval != expected_size) {
-            errorMsg = "Pandas time series length mismatch.";
-            DiagnosticsManager::Instance().LogError(errorMsg);
-            Py_DECREF(indexArr);
-            Py_DECREF(valueArr);
-            return false;
-        }
-        
-        memcpy(time, PyArray_DATA(idxArr), expected_size * sizeof(double));
-        memcpy(value, PyArray_DATA(valArr), expected_size * sizeof(double));
-        Py_DECREF(indexArr);
-        Py_DECREF(valueArr);
-        return true;
-    }
-    
-    // Try dict format
-    if (PyDict_Check(obj)) {
-        PyObject* pyTime = PyDict_GetItemString(obj, "time");
-        PyObject* pyValue = PyDict_GetItemString(obj, "value");
-        if (!pyTime || !pyValue || !PyList_Check(pyTime) || !PyList_Check(pyValue)) {
-            errorMsg = "Dict time series missing 'time' or 'value' lists.";
-            DiagnosticsManager::Instance().LogError(errorMsg);
-            return false;
-        }
-        
-        npy_intp ntime = (npy_intp)PyList_Size(pyTime);
-        npy_intp nvalue = (npy_intp)PyList_Size(pyValue);
-        if (ntime != expected_size || nvalue != expected_size) {
-            errorMsg = "Dict time/value list length mismatch.";
-            DiagnosticsManager::Instance().LogError(errorMsg);
-            return false;
-        }
-        
-        for (npy_intp i = 0; i < expected_size; ++i) {
-            PyObject* t = PyList_GetItem(pyTime, i);
-            PyObject* v = PyList_GetItem(pyValue, i);
-            if (!PyFloat_Check(t) && !PyLong_Check(t)) {
-                errorMsg = "Non-numeric time value in time series.";
-                DiagnosticsManager::Instance().LogError(errorMsg);
-                return false;
-            }
-            if (!PyFloat_Check(v) && !PyLong_Check(v)) {
-                errorMsg = "Non-numeric value in time series.";
-                DiagnosticsManager::Instance().LogError(errorMsg);
-                return false;
-            }
-            time[i] = PyFloat_AsDouble(t);
-            value[i] = PyFloat_AsDouble(v);
-        }
-        return true;
-    }
-    
-    errorMsg = "Unsupported time series format: expected pandas Series/DataFrame or dict with 'time' and 'value'.";
-    DiagnosticsManager::Instance().LogError(errorMsg);
-    return false;
 }
 
 PyObject* DataMarshaller::MarshalInputs(const GoldSimInputs& inputs) {
@@ -305,6 +225,7 @@ bool DataMarshaller::UnmarshalOutputs(PyObject* pyDict, GoldSimOutputs& outputs,
     if (!Unmarshal1DArray(pyArray, outputs.array, outputs.array_size, errorMsg)) return false;
     
     return true;
+
 }
 
 // Phase 3a: Multiple I/O marshalling implementations
@@ -660,11 +581,11 @@ bool DataMarshaller::UnpackSingleTimeSeries(PyObject* pResult, double* outargs, 
         // Check if this is a time series output
         if (keyName.find("goldsim_timeseries_") == 0) {
             DiagnosticsManager::Instance().LogDebug("Processing single time series output: " + keyName);
-            int index = 0;
-            bool result = UnpackTimeSeries(value, outargs, index);
+            int out_arg_count = 0;
+            bool result = UnpackTimeSeriesOutput(value, outargs, out_arg_count);
             if (result) {
                 DiagnosticsManager::Instance().LogInfo("Successfully unpacked time series with " + 
-                                                      std::to_string(index) + " elements");
+                                                      std::to_string(out_arg_count) + " elements");
             }
             return result;
         }
@@ -849,7 +770,6 @@ bool DataMarshaller::PackTimeSeriesInput(const double* inargs, int input_count, 
     
     DiagnosticsManager::Instance().LogInfo("Successfully packed time series input with " + 
                                           std::to_string(num_points) + " data points");
-    
     return true;
 }
 
@@ -866,9 +786,20 @@ bool DataMarshaller::UnpackTimeSeriesOutput(PyObject* pTimeSeriesDict, double* o
         return false;
     }
 
+    // Validate that times and values are lists
+    if (!PyList_Check(pTimes) || !PyList_Check(pValues)) {
+        DiagnosticsManager::Instance().LogError("Time series 'times' and 'values' must be lists.");
+        return false;
+    }
+
     // --- 2. Convert Python objects to C++ types ---
     bool is_calendar = (pIsCalendar == Py_True);
     const char* data_type_str = PyUnicode_AsUTF8(pDataType);
+    
+    if (!data_type_str) {
+        DiagnosticsManager::Instance().LogError("Failed to convert data_type to string.");
+        return false;
+    }
 
     // Convert data_type string to its corresponding number for GoldSim
     double data_type_num = 0.0; // Default to 'instantaneous'
@@ -876,7 +807,19 @@ bool DataMarshaller::UnpackTimeSeriesOutput(PyObject* pTimeSeriesDict, double* o
     else if (strcmp(data_type_str, "change") == 0) data_type_num = 2.0;
     else if (strcmp(data_type_str, "discrete") == 0) data_type_num = 3.0;
 
-    Py_ssize_t num_points = PyList_Size(pTimes);
+    Py_ssize_t num_times = PyList_Size(pTimes);
+    Py_ssize_t num_values = PyList_Size(pValues);
+    
+    // Validate that times and values have the same length
+    if (num_times != num_values) {
+        DiagnosticsManager::Instance().LogError("Time series 'times' and 'values' lists must have the same length.");
+        return false;
+    }
+    
+    if (num_times <= 0) {
+        DiagnosticsManager::Instance().LogError("Time series must have at least one data point.");
+        return false;
+    }
 
     // --- 3. Build the 'outargs' array in the correct GoldSim format ---
     int index = 0;
@@ -887,152 +830,65 @@ bool DataMarshaller::UnpackTimeSeriesOutput(PyObject* pTimeSeriesDict, double* o
     outargs[index++] = 0.0;          // Number of rows (0 for scalar)
     outargs[index++] = 0.0;          // Number of columns (0 for scalar)
     outargs[index++] = 1.0;          // Number of series (we support 1 for now)
-    outargs[index++] = static_cast<double>(num_points);
+    outargs[index++] = static_cast<double>(num_times);
 
-    // Add time points
-    for (Py_ssize_t i = 0; i < num_points; ++i) {
-        outargs[index++] = PyFloat_AsDouble(PyList_GetItem(pTimes, i));
-    }
-
-    // Add data values
-    for (Py_ssize_t i = 0; i < num_points; ++i) {
-        outargs[index++] = PyFloat_AsDouble(PyList_GetItem(pValues, i));
-    }
-
-    out_arg_count = index; // The total number of values written
-    return true;
-}
-
-// Simple time series output packing (for scalar-to-timeseries example)
-bool DataMarshaller::UnpackSimpleTimeSeries(PyObject* tsDict, double* outargs, int& index) {
-    if (!PyDict_Check(tsDict)) {
-        DiagnosticsManager::Instance().LogError("Simple time series output is not a dictionary");
-        return false;
-    }
-    
-    // 1. Check for and extract the 'is_calendar' boolean
-    PyObject* isCalendarObj = PyDict_GetItemString(tsDict, "is_calendar");
-    if (!isCalendarObj || !PyBool_Check(isCalendarObj)) {
-        DiagnosticsManager::Instance().LogError("'is_calendar' key is missing or not a boolean");
-        return false;
-    }
-    bool is_calendar = (isCalendarObj == Py_True);
-    
-    // 2. Check for and extract the 'data_type' string
-    PyObject* dataTypeObj = PyDict_GetItemString(tsDict, "data_type");
-    if (!dataTypeObj || !PyUnicode_Check(dataTypeObj)) {
-        DiagnosticsManager::Instance().LogError("'data_type' key is missing or not a string");
-        return false;
-    }
-    
-    // 3. Check for and extract the 'times' list
-    PyObject* timesObj = PyDict_GetItemString(tsDict, "times");
-    if (!timesObj || !PyList_Check(timesObj)) {
-        DiagnosticsManager::Instance().LogError("'times' key is missing or not a list");
-        return false;
-    }
-    
-    // 4. Check for and extract the 'values' list
-    PyObject* valuesObj = PyDict_GetItemString(tsDict, "values");
-    if (!valuesObj || !PyList_Check(valuesObj)) {
-        DiagnosticsManager::Instance().LogError("'values' key is missing or not a list");
-        return false;
-    }
-    
-    // 5. Validate that times and values have the same length
-    Py_ssize_t numPoints = PyList_Size(timesObj);
-    Py_ssize_t numValues = PyList_Size(valuesObj);
-    
-    if (numPoints != numValues) {
-        DiagnosticsManager::Instance().LogError("Simple time series times and values lists must have the same length");
-        return false;
-    }
-    
-    // Convert data_type string to numeric value
-    double dataTypeValue = 0.0; // Default to instantaneous
-    const char* dataTypeStr = PyUnicode_AsUTF8(dataTypeObj);
-    if (strcmp(dataTypeStr, "instantaneous") == 0) {
-        dataTypeValue = 0.0;
-    } else if (strcmp(dataTypeStr, "constant") == 0) {
-        dataTypeValue = 1.0;
-    } else if (strcmp(dataTypeStr, "linear") == 0) {
-        dataTypeValue = 2.0;
-    } else if (strcmp(dataTypeStr, "step") == 0) {
-        dataTypeValue = 3.0;
-    } else {
-        DiagnosticsManager::Instance().LogInfo("Unknown data_type: " + std::string(dataTypeStr) + ", using instantaneous");
-    }
-    
-    // Build the GoldSim Time Series format according to the specification
-    // Index 0: Magic number 20.0
-    outargs[index++] = 20.0;
-    DiagnosticsManager::Instance().LogDebug("Index " + std::to_string(index - 1) + ": Magic number 20.0");
-    
-    // Index 1: Format version -3.0
-    outargs[index++] = -3.0;
-    DiagnosticsManager::Instance().LogDebug("Index " + std::to_string(index - 1) + ": Format version -3.0");
-    
-    // Index 2: is_calendar (0.0 for elapsed time, 1.0 for dates)
-    outargs[index++] = is_calendar ? 1.0 : 0.0;
-    DiagnosticsManager::Instance().LogDebug("Index " + std::to_string(index - 1) + ": is_calendar=" + std::to_string(is_calendar ? 1.0 : 0.0));
-    
-    // Index 3: data_type (0 for instantaneous, 1 for constant, etc.)
-    outargs[index++] = dataTypeValue;
-    DiagnosticsManager::Instance().LogDebug("Index " + std::to_string(index - 1) + ": data_type=" + std::to_string(dataTypeValue));
-    
-    // Index 4: Number of rows (0 for scalar time series)
-    outargs[index++] = 0.0;
-    DiagnosticsManager::Instance().LogDebug("Index " + std::to_string(index - 1) + ": rows=0.0");
-    
-    // Index 5: Number of columns (0 for scalar time series)
-    outargs[index++] = 0.0;
-    DiagnosticsManager::Instance().LogDebug("Index " + std::to_string(index - 1) + ": columns=0.0");
-    
-    // Index 6: Number of series (1 for single series)
-    outargs[index++] = 1.0;
-    DiagnosticsManager::Instance().LogDebug("Index " + std::to_string(index - 1) + ": num_series=1.0");
-    
-    // Index 7: Number of time points
-    outargs[index++] = static_cast<double>(numPoints);
-    DiagnosticsManager::Instance().LogDebug("Index " + std::to_string(index - 1) + ": num_points=" + std::to_string(numPoints));
-    
-    // Indices 8 to 8+N-1: Time points
-    for (Py_ssize_t i = 0; i < numPoints; i++) {
-        PyObject* timeValue = PyList_GetItem(timesObj, i);
-        if (!PyFloat_Check(timeValue) && !PyLong_Check(timeValue)) {
-            DiagnosticsManager::Instance().LogError("Non-numeric time value at index " + std::to_string(i));
+    // Add time points with error checking
+    for (Py_ssize_t i = 0; i < num_times; ++i) {
+        PyObject* timeItem = PyList_GetItem(pTimes, i);
+        if (!timeItem) {
+            DiagnosticsManager::Instance().LogError("Failed to get time item at index " + std::to_string(i));
             return false;
         }
-        double time = PyFloat_AsDouble(timeValue);
+        
+        if (!PyFloat_Check(timeItem) && !PyLong_Check(timeItem)) {
+            DiagnosticsManager::Instance().LogError("Time value at index " + std::to_string(i) + " is not numeric");
+            return false;
+        }
+        
+        double timeValue = PyFloat_AsDouble(timeItem);
         if (PyErr_Occurred()) {
             DiagnosticsManager::Instance().LogError("Failed to convert time value at index " + std::to_string(i));
             PyErr_Clear();
             return false;
         }
-        outargs[index++] = time;
-        DiagnosticsManager::Instance().LogDebug("Index " + std::to_string(index - 1) + ": time[" + std::to_string(i) + "]=" + std::to_string(time));
+        
+        outargs[index++] = timeValue;
     }
-    
-    // Indices 8+N to 8+2N-1: Data values
-    for (Py_ssize_t i = 0; i < numPoints; i++) {
-        PyObject* dataValue = PyList_GetItem(valuesObj, i);
-        if (!PyFloat_Check(dataValue) && !PyLong_Check(dataValue)) {
-            DiagnosticsManager::Instance().LogError("Non-numeric data value at index " + std::to_string(i));
+
+    // Add data values with error checking
+    for (Py_ssize_t i = 0; i < num_values; ++i) {
+        PyObject* valueItem = PyList_GetItem(pValues, i);
+        if (!valueItem) {
+            DiagnosticsManager::Instance().LogError("Failed to get value item at index " + std::to_string(i));
             return false;
         }
-        double value = PyFloat_AsDouble(dataValue);
+        
+        if (!PyFloat_Check(valueItem) && !PyLong_Check(valueItem)) {
+            DiagnosticsManager::Instance().LogError("Data value at index " + std::to_string(i) + " is not numeric");
+            return false;
+        }
+        
+        double dataValue = PyFloat_AsDouble(valueItem);
         if (PyErr_Occurred()) {
             DiagnosticsManager::Instance().LogError("Failed to convert data value at index " + std::to_string(i));
             PyErr_Clear();
             return false;
         }
-        outargs[index++] = value;
-        DiagnosticsManager::Instance().LogDebug("Index " + std::to_string(index - 1) + ": value[" + std::to_string(i) + "]=" + std::to_string(value));
+        
+        outargs[index++] = dataValue;
+    }
+
+    out_arg_count = index; // The total number of values written
+    
+    // Debug: Log what we actually wrote
+    DiagnosticsManager::Instance().LogDebug("UnpackTimeSeriesOutput wrote " + std::to_string(out_arg_count) + " values:");
+    for (int i = 0; i < out_arg_count; i++) {
+        DiagnosticsManager::Instance().LogDebug("  outargs[" + std::to_string(i) + "] = " + std::to_string(outargs[i]));
     }
     
-    DiagnosticsManager::Instance().LogInfo("Successfully unpacked simple time series with " + 
-                                          std::to_string(numPoints) + " data points, total elements: " + 
-                                          std::to_string(index));
+    DiagnosticsManager::Instance().LogDebug("Successfully unpacked time series with " + 
+                                          std::to_string(num_times) + " points, total output count: " + 
+                                          std::to_string(out_arg_count));
     
     return true;
 }

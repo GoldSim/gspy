@@ -177,10 +177,9 @@ GSPy/
 │   ├── GSPyInterface.cpp   # Main interface
 │   ├── DataMarshaller.cpp  # Data conversion
 │   ├── *.h                 # Header files
-│   └── GSPy.rc            # Resources
-├── TestGSPy/              # Test executable
+│   └── ...          
+├── tests/              # Test executable
 ├── examples/              # Python examples
-├── docs/                  # Documentation
 └── bin/                   # Built DLLs
 ```
 

@@ -34,7 +34,6 @@ public:
     bool UnpackSingleTimeSeries(PyObject* pResult, double* outargs, int maxSize);
     
     // Simple time series output packing (for scalar-to-timeseries example)
-    bool UnpackSimpleTimeSeries(PyObject* tsDict, double* outargs, int& index);
     
     // Corrected time series output unpacking function
     bool UnpackTimeSeriesOutput(PyObject* pTimeSeriesDict, double* outargs, int& out_arg_count);

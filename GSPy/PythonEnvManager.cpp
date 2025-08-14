@@ -1,3 +1,4 @@
+#include "common.h"
 #include "PythonEnvManager.h"
 #include <Python.h>
 #include <mutex>

@@ -18,6 +18,8 @@ public:
     void LogDebug(const std::string& msg);
     void LogInfo(const std::string& msg);
     void SetLogFile(const std::string& filename);
+    void Clear();
+    std::string GetLastError() const;
 
 private:
     DiagnosticsManager();
@@ -29,4 +31,5 @@ private:
     
     LogLevel logLevel_;
     std::string logFile_;
+    std::string lastError_;
 };
