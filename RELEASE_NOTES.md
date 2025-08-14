@@ -1,8 +1,8 @@
 # GSPy Release Notes
 
-## 🎉 Major Release: Full GoldSim-Python Integration
+## Major Release: Full GoldSim-Python Integration
 
-### ✅ **Fully Supported Features:**
+### **Fully Supported Features:**
 
 1. **Scalar to Scalar** (1 input → 1 output)
    - Simple mathematical operations
@@ -34,21 +34,21 @@
 
 ### 🔧 **Technical Achievements:**
 
-- ✅ **Robust Error Handling** - Graceful fallbacks prevent crashes
-- ✅ **GIL Management** - Proper thread safety for Python API calls
-- ✅ **Automatic Data Type Detection** - Smart input/output marshalling
-- ✅ **Configuration File System** - Easy I/O specification via `gspy_config.txt`
-- ✅ **Complex Data Structure Support** - Time series, lookup tables, vectors
-- ✅ **Performance Optimization** - Fast execution with proper initialization
+- **Robust Error Handling** - Graceful fallbacks prevent crashes
+- **GIL Management** - Proper thread safety for Python API calls
+- **Automatic Data Type Detection** - Smart input/output marshalling
+- **Configuration File System** - Easy I/O specification via `gspy_config.txt`
+- **Complex Data Structure Support** - Time series, lookup tables, vectors
+- **Performance Optimization** - Fast execution with proper initialization
 
-### 🚀 **Key Innovations:**
+### **Key Innovations:**
 
 1. **Bidirectional Data Marshalling** - Seamless conversion between GoldSim and Python data formats
 2. **Universal Input Handling** - Automatic detection of scalar vs. complex data types
 3. **Flexible Output Processing** - Support for scalars, vectors, and complex structures
 4. **Robust Configuration System** - Simple text files for I/O specification
 
-### 📋 **System Requirements:**
+### **System Requirements:**
 
 - **Python**: 3.9+ (tested with 3.13.2)
 - **GoldSim**: Compatible with external DLL interface
