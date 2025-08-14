@@ -125,12 +125,12 @@ def goldsim_calculate(inputs):
 
 ## Supported Data Types
 
-### ✅ **Fully Supported Input Types**
+### **Fully Supported Input Types**
 - **Scalar**: Single numeric values → `{'input1': 5.0}`
 - **Vector**: Multiple numeric values → `{'input1': 1.0, 'input2': 2.0, ...}`
 - **Time Series**: GoldSim time series → `{'input1': {'times': [...], 'values': [...]}}`
 
-### ✅ **Fully Supported Output Types**
+### **Fully Supported Output Types**
 - **Scalar**: Single values → `{'output1': 5.0}`
 - **Vector**: Lists of values → `{'output1': [1.0, 2.0, 3.0]}`
 - **Multiple Scalars**: Separate outputs → `{'output1': 5.0, 'output2': 10.0}`
@@ -174,7 +174,7 @@ def goldsim_calculate(inputs):
     pass
 ```
 
-## 📚 Complete Examples
+## Complete Examples
 
 The `examples/` directory contains **7 fully working examples** covering all supported data types:
 
@@ -188,16 +188,16 @@ The `examples/` directory contains **7 fully working examples** covering all sup
 | **Time Series Output**  | 1 → 14         | Time series generation        | None      |
 | **NumPy Library**       | 5 → 4          | Advanced statistics           | NumPy     |
 
-### 🚀 **Using Examples:**
+### **Using Examples:**
 1. Navigate to any example directory (e.g., `examples/Scalar to Scalar/`)
 2. Copy `GSPy.dll` to that directory
 3. Open the `.gsm` file in GoldSim
 4. Run the simulation - everything is pre-configured!
 
 Each example includes:
-- ✅ `gspy_script.py` - The Python script
-- ✅ `*.gsm` - Pre-configured GoldSim model
-- ✅ Complete documentation and comments
+- `gspy_script.py` - The Python script
+- `*.gsm` - Pre-configured GoldSim model
+- Complete documentation and comments
 
 ## Building from Source
 
@@ -243,21 +243,21 @@ GSPy implements the full GoldSim External Function protocol:
 **Problem**: Incorrect input/output counts or "arguments do not match" errors  
 **Solution**: Ensure your `gspy_info()` function uses EXACTLY these key names:
 ```python
-return {'inputs': X, 'outputs': Y}  # ✅ Correct
-return {'num_inputs': X, 'outputs': Y}  # ❌ Wrong - will default to 1,1
+return {'inputs': X, 'outputs': Y}  # Correct
+return {'num_inputs': X, 'outputs': Y}  # Wrong - will default to 1,1
 ```
 
 ### Debug Logging
 GSPy creates detailed logs for troubleshooting. Check the console output and any generated log files for diagnostic information.
 
-## 🎯 **Production Ready**
+## **Production Ready**
 
 GSPy v2.0 is a **complete, production-ready system** with:
-- ✅ **All major GoldSim data types supported**
-- ✅ **Comprehensive error handling and fallbacks**
-- ✅ **High performance with optimized Python integration**
-- ✅ **Extensive testing across all example types**
-- ✅ **Full documentation and working examples**
+- **All major GoldSim data types supported**
+- **Comprehensive error handling and fallbacks**
+- **High performance with optimized Python integration**
+- **Extensive testing across all example types**
+- **Full documentation and working examples**
 
 ## System Requirements
 
@@ -268,13 +268,13 @@ GSPy v2.0 is a **complete, production-ready system** with:
 
 ## Version History
 
-- **v2.0**: 🎉 **Major Release** - Complete rewrite with full data type support
-  - ✅ All GoldSim data types (scalars, vectors, lookup tables, time series)
-  - ✅ Bidirectional data marshalling
-  - ✅ NumPy integration
-  - ✅ Robust error handling with fallbacks
-  - ✅ Performance optimization
-  - ✅ 7 complete working examples
+- **v1.5**: **Major Release** - Complete rewrite with full data type support
+  - All GoldSim data types (scalars, vectors, lookup tables, time series)
+  - Bidirectional data marshalling
+  - NumPy integration
+  - Robust error handling with fallbacks
+  - Performance optimization
+  - 7 complete working examples
 
 - **v1.0**: Initial release with basic scalar support
 
