@@ -1,4 +1,3 @@
-#include "common.h"
 #include "UserScriptAdapter.h"
 #include "DiagnosticsManager.h"
 

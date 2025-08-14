@@ -75,18 +75,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LibraryPath>C:\Users\JasonLillywhite\AppData\Local\Programs\Python\Python313\libs;$(LibraryPath)</LibraryPath>
-    <IncludePath>C:\Users\JasonLillywhite\AppData\Local\Programs\Python\Python313\include;$(IncludePath)</IncludePath>
-  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -95,13 +89,8 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);C:\Users\JasonLillywhite\AppData\Local\Programs\Python\Python313\Include;C:\Users\JasonLillywhite\AppData\Local\Programs\Python\Python313\Lib\site-packages\numpy\_core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\JasonLillywhite\AppData\Local\Programs\Python\Python313\Include;C:\Users\JasonLillywhite\AppData\Local\Programs\Python\Python313\Lib\site-packages\numpy\_core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
-    <Link>
-      <AdditionalDependencies>python313.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -111,9 +100,8 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(GSPY)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(GSPY)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>Py_LIMITED_API;_WINDLL;GSPY_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -133,7 +121,7 @@
         NOTE: The following paths are required for building with Python 3.13 and NumPy. If you upgrade Python or NumPy, update these paths accordingly.
         To avoid hardcoding, consider using an environment variable or CMake in the future.
       -->
-      <AdditionalIncludeDirectories>$(ProjectDir);C:\Users\JasonLillywhite\AppData\Local\Programs\Python\Python313\Include;C:\Users\JasonLillywhite\AppData\Local\Programs\Python\Python313\Lib\site-packages\numpy\_core\include;$(GSPY)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\JasonLillywhite\AppData\Local\Programs\Python\Python313\Include;C:\Users\JasonLillywhite\AppData\Local\Programs\Python\Python313\Lib\site-packages\numpy\_core\include;$(GSPY)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>GSPY_EXPORTS;PyExc_ModuleNotFoundError=PyExc_ImportError;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -145,9 +133,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\tests\TestIntegration.cpp" />
-    <ClCompile Include="..\tests\test_datamarshaller.cpp" />
-    <ClCompile Include="..\tests\test_working_directory.cpp" />
     <ClCompile Include="ErrorRelay.cpp" />
     <ClCompile Include="GSPyInterface.cpp" />
     <ClCompile Include="DiagnosticsManager.cpp" />
@@ -157,7 +142,6 @@
     <ClCompile Include="PythonCallbacks.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="common.h" />
     <ClInclude Include="ErrorRelay.h" />
     <ClInclude Include="GSPyInterface.h" />
     <ClInclude Include="DiagnosticsManager.h" />
@@ -168,9 +152,6 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GSPy.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\tests\fail_with_exception.py" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,4 +1,3 @@
-#include "common.h"
 #include "DiagnosticsManager.h"
 #include <fstream>
 #include <iostream>
@@ -20,7 +19,6 @@ void DiagnosticsManager::SetLogLevel(LogLevel level) {
 }
 
 void DiagnosticsManager::LogError(const std::string& msg) {
-    lastError_ = msg;
     if (static_cast<int>(logLevel_) <= static_cast<int>(LogLevel::LOG_ERROR)) {
         WriteLog("[ERROR] " + msg);
     }
@@ -40,14 +38,6 @@ void DiagnosticsManager::LogInfo(const std::string& msg) {
 
 void DiagnosticsManager::SetLogFile(const std::string& filename) {
     logFile_ = filename;
-}
-
-void DiagnosticsManager::Clear() {
-    lastError_.clear();
-}
-
-std::string DiagnosticsManager::GetLastError() const {
-    return lastError_;
 }
 
 void DiagnosticsManager::WriteLog(const std::string& msg) {

@@ -1,4 +1,3 @@
-#include "common.h"
 #include "gtest/gtest.h"
 #include <cstring>
 #include <string>

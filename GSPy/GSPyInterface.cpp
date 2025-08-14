@@ -1,12 +1,9 @@
-#include "common.h"
-
 #include <windows.h> // For the DLL entry point
 #include <fstream>
 #include <string>
 #include <sstream>
 #include <vector> // For std::vector
-#include <filesystem>
-#include "GSPyInterface.h"
+#include <Python.h> // Python C API
 #include "DiagnosticsManager.h"
 #include "DataMarshaller.h"
 #include "PythonEnvManager.h"
@@ -27,127 +24,11 @@ static int g_numOutputs = 1;
 
 // Remove old LogMessage function - now using DiagnosticsManager
 
-// Forward declaration removed - using bool version only
+// Forward declaration of our main exported function
+extern "C" void __declspec(dllexport) gs_DoCalculation(int methodID, int* status, double* inargs, double* outargs);
 
 // Global UserScriptAdapter instance
 static UserScriptAdapter g_scriptAdapter;
-
-// Test interface functions
-extern "C" bool __declspec(dllexport) gs_Initialize(const char* scriptPath, char* errorMsg, int errorMsgSize) {
-    try {
-        DiagnosticsManager::Instance().SetLogFile("gspy_log.txt");
-        DiagnosticsManager::Instance().SetLogLevel(LogLevel::DEBUG);
-        DiagnosticsManager::Instance().LogInfo("=== GSPy Test Initialize ===");
-        
-        if (!PythonEnvManager::Instance().IsInitialized()) {
-            PythonEnvManager::Instance().Initialize();
-            if (!PythonEnvManager::Instance().IsInitialized()) {
-                strncpy_s(errorMsg, errorMsgSize, "Python initialization failed", errorMsgSize - 1);
-                return false;
-            }
-        }
-        
-        errorMsg[0] = '\0';
-        return true;
-    } catch (const std::exception& e) {
-        strncpy_s(errorMsg, errorMsgSize, e.what(), errorMsgSize - 1);
-        return false;
-    }
-}
-
-extern "C" bool __declspec(dllexport) gs_SetScriptPath(const char* scriptPath, char* errorMsg, int errorMsgSize) {
-    try {
-        std::string scriptName = std::filesystem::path(scriptPath).stem().string();
-        if (!g_scriptAdapter.LoadScript(scriptName)) {
-            strncpy_s(errorMsg, errorMsgSize, "Failed to load script", errorMsgSize - 1);
-            return false;
-        }
-        
-        errorMsg[0] = '\0';
-        return true;
-    } catch (const std::exception& e) {
-        strncpy_s(errorMsg, errorMsgSize, e.what(), errorMsgSize - 1);
-        return false;
-    }
-}
-
-extern "C" bool __declspec(dllexport) gs_DoCalculation(gs_InputStruct* inputs, gs_OutputStruct* outputs) {
-    try {
-        if (!g_scriptAdapter.HasGoldSimCalculate()) {
-            strncpy_s(outputs->errorMsg, sizeof(outputs->errorMsg), "Script not loaded", sizeof(outputs->errorMsg) - 1);
-            return false;
-        }
-        
-        DataMarshaller marshaller;
-        double inargs[1] = { inputs->scalar };
-        PyObject* inputDict = marshaller.PackArguments(inargs, 1);
-        if (!inputDict) {
-            strncpy_s(outputs->errorMsg, sizeof(outputs->errorMsg), "Failed to pack arguments", sizeof(outputs->errorMsg) - 1);
-            return false;
-        }
-        
-        std::string errorMsg;
-        PyObject* result = g_scriptAdapter.CallGoldSimCalculate(inputDict, errorMsg);
-        Py_DECREF(inputDict);
-        
-        if (!result) {
-            strncpy_s(outputs->errorMsg, sizeof(outputs->errorMsg), errorMsg.c_str(), sizeof(outputs->errorMsg) - 1);
-            return false;
-        }
-        
-        double outargs[1];
-        if (!marshaller.UnpackResult(result, outargs, 1)) {
-            Py_DECREF(result);
-            strncpy_s(outputs->errorMsg, sizeof(outputs->errorMsg), "Failed to unpack result", sizeof(outputs->errorMsg) - 1);
-            return false;
-        }
-        
-        outputs->scalar = outargs[0];
-        outputs->errorMsg[0] = '\0';
-        Py_DECREF(result);
-        return true;
-    } catch (const std::exception& e) {
-        strncpy_s(outputs->errorMsg, sizeof(outputs->errorMsg), e.what(), sizeof(outputs->errorMsg) - 1);
-        return false;
-    }
-}
-
-extern "C" void __declspec(dllexport) gs_Finalize() {
-    DiagnosticsManager::Instance().LogInfo("=== GSPy Test Finalize ===");
-}
-
-// I/O metadata functions
-extern "C" int __declspec(dllexport) gs_GetNumberOfInputs() {
-    return g_numInputs;
-}
-
-extern "C" bool __declspec(dllexport) gs_GetInputName(int idx, char* buffer, int buflen) {
-    if (idx == 0) {
-        strncpy_s(buffer, buflen, "input", buflen - 1);
-        return true;
-    }
-    return false;
-}
-
-extern "C" int __declspec(dllexport) gs_GetInputDataType(int idx) {
-    return 0; // 0 for double
-}
-
-extern "C" int __declspec(dllexport) gs_GetNumberOfOutputs() {
-    return g_numOutputs;
-}
-
-extern "C" bool __declspec(dllexport) gs_GetOutputName(int idx, char* buffer, int buflen) {
-    if (idx == 0) {
-        strncpy_s(buffer, buflen, "output", buflen - 1);
-        return true;
-    }
-    return false;
-}
-
-extern "C" int __declspec(dllexport) gs_GetOutputDataType(int idx) {
-    return 0; // 0 for double
-}
 
 
 
@@ -277,3 +158,243 @@ static bool GetScriptIOInfo(int& numInputs, int& numOutputs) {
     return true;
 }
 
+extern "C" void __declspec(dllexport) gs_DoCalculation(
+    int methodID, int* status, double* inargs, double* outargs)
+{
+    *status = 0; // Default to success
+
+    switch (methodID)
+    {
+        case XF_INITIALIZE:
+        {
+            // Initialize the diagnostics manager
+            DiagnosticsManager::Instance().SetLogFile("gspy_log.txt");
+            DiagnosticsManager::Instance().SetLogLevel(LogLevel::DEBUG);
+            DiagnosticsManager::Instance().LogInfo("=== GSPy DLL INITIALIZE ===");
+            
+            // Initialize Python interpreter using PythonEnvManager
+            if (!PythonEnvManager::Instance().IsInitialized()) {
+                DiagnosticsManager::Instance().LogInfo("Initializing Python interpreter...");
+                PythonEnvManager::Instance().Initialize();
+                if (!PythonEnvManager::Instance().IsInitialized()) {
+                    DiagnosticsManager::Instance().LogError("Python initialization failed");
+                    *status = 1;
+                    break;
+                }
+                DiagnosticsManager::Instance().LogInfo("Python interpreter initialized successfully");
+            } else {
+                DiagnosticsManager::Instance().LogDebug("Python interpreter already initialized");
+            }
+            
+            // Load the Python script using UserScriptAdapter
+            DiagnosticsManager::Instance().LogInfo("Loading gspy_script.py...");
+            
+            // Log current working directory for debugging
+            char currentDir[MAX_PATH];
+            if (GetCurrentDirectoryA(MAX_PATH, currentDir)) {
+                std::string dirMsg = "Current working directory: ";
+                dirMsg += currentDir;
+                DiagnosticsManager::Instance().LogDebug(dirMsg);
+            }
+            
+            // Get DLL directory and add to Python path
+            std::string dllDir = GetCurrentDllDirectory();
+            if (dllDir.empty()) {
+                DiagnosticsManager::Instance().LogError("Could not determine DLL directory");
+                *status = 1;
+                break;
+            }
+            
+            std::string dllDirMsg = "DLL directory: " + dllDir;
+            DiagnosticsManager::Instance().LogDebug(dllDirMsg);
+            
+            // Add DLL directory to Python path so it can find the script
+            PyObject* sysPath = PySys_GetObject("path");
+            PyObject* pyDllDir = PyUnicode_FromString(dllDir.c_str());
+            PyList_Insert(sysPath, 0, pyDllDir);
+            Py_DECREF(pyDllDir);
+            
+            DiagnosticsManager::Instance().LogDebug("Added DLL directory to Python path");
+            
+            // Use UserScriptAdapter to load the script
+            if (!g_scriptAdapter.LoadScript("gspy_script")) {
+                DiagnosticsManager::Instance().LogError("Failed to load gspy_script.py using UserScriptAdapter");
+                *status = 1;
+                break;
+            }
+            DiagnosticsManager::Instance().LogInfo("Python script loaded successfully");
+            
+            // Check if the script has the required function
+            if (!g_scriptAdapter.HasGoldSimCalculate()) {
+                DiagnosticsManager::Instance().LogError("goldsim_calculate function not found or not callable");
+                *status = 1;
+                break;
+            }
+            DiagnosticsManager::Instance().LogInfo("Python goldsim_calculate function found and ready");
+            
+            DiagnosticsManager::Instance().LogInfo("DLL initialization completed successfully");
+            break;
+        }
+            
+        case XF_CALCULATE:
+        {
+            DataMarshaller marshaller; // Create DataMarshaller instance
+            
+            if (g_scriptAdapter.HasGoldSimCalculate()) {
+                // Use DataMarshaller to pack all input arguments
+                PyObject* inputDict = marshaller.PackArguments(inargs, g_numInputs);
+                if (!inputDict) {
+                    DiagnosticsManager::Instance().LogError("Failed to pack input arguments");
+                    for (int i = 0; i < g_numOutputs; i++) {
+                        outargs[i] = -999.0;
+                    }
+                    *status = 1;
+                    break;
+                }
+                
+                // Use UserScriptAdapter to call the Python function
+                std::string errorMsg;
+                PyObject* pResult = g_scriptAdapter.CallGoldSimCalculate(inputDict, errorMsg);
+                Py_DECREF(inputDict);
+                
+                if (pResult) {
+                    // Choose the appropriate unpacking method based on output type
+                    const int MAX_OUTPUT_SIZE = 1000;  // Maximum size for time series data
+                    bool unpackSuccess = false;
+                    bool hasTimeSeries = false;  // Moved to broader scope
+                    
+                    // First check if this is a time series output
+                    if (PyDict_Check(pResult)) {
+                        PyObject* key, * value;
+                        Py_ssize_t pos = 0;
+                        
+                        while (PyDict_Next(pResult, &pos, &key, &value)) {
+                            if (PyUnicode_Check(key)) {
+                                const char* keyStr = PyUnicode_AsUTF8(key);
+                                std::string keyName(keyStr);
+                                if (keyName.find("goldsim_timeseries_") == 0) {
+                                    hasTimeSeries = true;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (hasTimeSeries) {
+                            // Use time series unpacking
+                            unpackSuccess = marshaller.UnpackSingleTimeSeries(pResult, outargs, MAX_OUTPUT_SIZE);
+                        } else {
+                            // Use regular scalar unpacking
+                            unpackSuccess = marshaller.UnpackResult(pResult, outargs, g_numOutputs);
+                        }
+                    }
+                    
+                    if (unpackSuccess) {
+                        // Success! Log the input/output values
+                        std::ostringstream oss;
+                        oss << "CALCULATE: Python call successful - inputs=[";
+                        for (int i = 0; i < g_numInputs; i++) {
+                            if (i > 0) oss << ", ";
+                            oss << inargs[i];
+                        }
+                        oss << "], outputs=[";
+                        
+                        // Log the appropriate number of outputs based on whether it's time series or regular
+                        int outputsToLog = hasTimeSeries ? 15 : g_numOutputs;
+                        for (int i = 0; i < outputsToLog; i++) {
+                            if (i > 0) oss << ", ";
+                            oss << outargs[i];
+                        }
+                        oss << "]";
+                        
+                        if (hasTimeSeries) {
+                            oss << " (time series data)";
+                        }
+                        
+                        DiagnosticsManager::Instance().LogInfo(oss.str());
+                    } else {
+                        DiagnosticsManager::Instance().LogError("Failed to unpack results from Python function");
+                        for (int i = 0; i < g_numOutputs; i++) {
+                            outargs[i] = -999.0;
+                        }
+                        *status = 1;
+                    }
+                    Py_DECREF(pResult);
+                } else {
+                    DiagnosticsManager::Instance().LogError("Python function call failed: " + errorMsg);
+                    for (int i = 0; i < g_numOutputs; i++) {
+                        outargs[i] = -999.0;
+                    }
+                    *status = 1;
+                }
+            } else {
+                DiagnosticsManager::Instance().LogError("Python function not available");
+                for (int i = 0; i < g_numOutputs; i++) {
+                    outargs[i] = -999.0;
+                }
+                *status = 1;
+            }
+            
+            break;
+        }
+            
+        case XF_REP_VERSION:
+            outargs[0] = 1.0;
+            DiagnosticsManager::Instance().LogDebug("REP_VERSION: returning 1.0");
+            break;
+            
+        case XF_REP_ARGUMENTS:
+        {
+            // Try to get I/O requirements from the Python script's gspy_info() function
+            int detectedInputs = 1;   // Default fallback values
+            int detectedOutputs = 1;
+            
+            // Only attempt dynamic detection if it's safe to do so
+            bool dynamicDetectionSuccess = false;
+            try {
+                dynamicDetectionSuccess = GetScriptIOInfo(detectedInputs, detectedOutputs);
+            } catch (...) {
+                DiagnosticsManager::Instance().LogError("Exception during dynamic I/O detection");
+                dynamicDetectionSuccess = false;
+            }
+            
+            if (dynamicDetectionSuccess) {
+                // Successfully got I/O info from script
+                g_numInputs = detectedInputs;
+                g_numOutputs = detectedOutputs;
+                DiagnosticsManager::Instance().LogInfo("REP_ARGUMENTS: " + std::to_string(g_numInputs) + 
+                                                      " inputs, " + std::to_string(g_numOutputs) + 
+                                                      " outputs (from gspy_info)");
+            } else {
+                // Fallback to default values if gspy_info() fails
+                g_numInputs = detectedInputs;
+                g_numOutputs = detectedOutputs;
+                DiagnosticsManager::Instance().LogError("Failed to get I/O info from gspy_info(), using defaults: " + 
+                                                       std::to_string(g_numInputs) + " input, " + 
+                                                       std::to_string(g_numOutputs) + " output");
+            }
+            
+            outargs[0] = g_numInputs;
+            outargs[1] = g_numOutputs;
+            break;
+        }
+            
+        case XF_CLEANUP:
+        {
+            DiagnosticsManager::Instance().LogInfo("CLEANUP: Starting DLL cleanup...");
+            
+            // UserScriptAdapter handles its own Python object cleanup in its destructor
+            DiagnosticsManager::Instance().LogDebug("Python objects managed by UserScriptAdapter");
+            
+            // PythonEnvManager handles Python interpreter lifecycle
+            DiagnosticsManager::Instance().LogDebug("Python environment managed by PythonEnvManager");
+            
+            DiagnosticsManager::Instance().LogInfo("CLEANUP: DLL cleanup completed");
+            break;
+        }
+            
+        default:
+            DiagnosticsManager::Instance().LogError("Unknown method ID");
+            *status = 1;
+            break;
+    }
+}

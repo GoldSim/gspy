@@ -12,55 +12,44 @@ A DLL interface that enables integration between GoldSim and Python, allowing co
 
 **USE AT YOUR OWN RISK**: GSPy is provided "as is" without any warranty. Users are responsible for thorough testing and validation in their specific environment before production use. See [LICENSE](LICENSE) and [SECURITY.md](SECURITY.md) for complete terms and security considerations.
 
-
-## Prerequisites
-
-- **GoldSim**: Version 14.0 or newer
-- **Python**: Version 3.8 or newer (tested up to 3.13)
-- **Windows**: 64-bit
-- **Required Python Packages**: NumPy, pandas
-
 ## Overview
 
 GSPy provides a bridge between GoldSim's External Element and Python scripts, featuring automatic script loading, intelligent I/O detection, and comprehensive error handling.
 
-### Features
+### Key Features
 
 - **Zero Configuration**: Automatically loads `gspy_script.py` and detects interface requirements
 - **Automatic I/O detection**: No manual setup - GSPy reads your script's `gspy_info()` function
 - **Robust GIL management**: Proper Global Interpreter Lock handling prevents access violations
+- **Multiple data types**: Support for scalar, vector, and time series data (input only)
 - **Comprehensive error handling**: Detailed logging and error reporting
 - **Modern C++ implementation**: Clean, maintainable codebase with proper memory management
-- **Rich Data Type Support**:
-    - Scalars (single double values)
-    - 1D and 2D arrays (NumPy arrays)
-    - GoldSim Time Series (Python dictionaries or pandas Series)
-    - GoldSim Lookup Tables (Python dictionaries)
 
+## Quick Start
 
-## Setup and Configuration
+1. **Place files in the same directory**:
+   - `GSPy.dll` (the interface DLL)
+   - `gspy_script.py` (your Python script)
+   - Your GoldSim model file
 
-Follow these steps to set up GSPy with your GoldSim model:
+2. **Create your Python script** (`gspy_script.py`):
+   ```python
+   def gspy_info():
+       """Define the interface specification."""
+       return {'inputs': 1, 'outputs': 1}
 
-1. **Obtain the DLL**
-    - Build or download the compiled `GSPy.dll` file.
+   def goldsim_calculate(inputs):
+       """Main function called by GoldSim."""
+       input_value = inputs.get('input1', 0.0)
+       result = input_value * 2.0 + 10.0
+       return {'output1': result}
+   ```
 
-2. **Place Required Files**
-    - Put `GSPy.dll` in the same directory as your GoldSim model file (or another known location).
-    - Add your Python script (e.g., `gspy_script.py`) to the same directory.
+3. **Configure GoldSim External Element**:
+   - DLL Path: `GSPy.dll`
+   - Configuration: **Fully Automatic!** GSPy reads your script's `gspy_info()` function to configure inputs/outputs
 
-3. **Configure GoldSim External Element**
-    - In GoldSim, add an External Element.
-    - Set the DLL Path to the location of `GSPy.dll`.
-    - In the External Element properties, specify the Python script and function to call (usually `gspy_script.py` and `goldsim_calculate`).
-
-4. **Reference Your Python Script and Function**
-    - Ensure your script implements both `gspy_info()` and `goldsim_calculate(inputs)` functions as described below.
-
-5. **Run Your Simulation**
-    - GoldSim will automatically load and execute your Python script using GSPy.
-
-**Note:** GSPy is not a standard Python package. You do not install it with `pip`. It is a DLL that integrates with GoldSim.
+4. **Run your simulation** - GSPy automatically loads and executes your Python script with zero configuration required!
 
 ### Adding More Inputs and Outputs
 
@@ -94,40 +83,6 @@ def goldsim_calculate(inputs):
 - Output keys are always `output1`, `output2`, `output3`, etc.
 - The number of inputs/outputs in `gspy_info()` must match what you access in `goldsim_calculate()`
 - **The `.get()` method**: `inputs.get('input1', 0.0)` safely retrieves the value or returns `0.0` if the key doesn't exist, preventing crashes
-
-### Time Series Outputs
-
-GSPy supports creating time series outputs from Python. Use the special key format `goldsim_timeseries_output_N` where N is the output number:
-
-```python
-def gspy_info():
-    """Time series output requires more output slots (8 header + 2*N data points)."""
-    return {'inputs': 1, 'outputs': 14}  # For 3 time points: 8 + (2*3) = 14
-
-def goldsim_calculate(inputs):
-    """Create a time series output."""
-    scaling_factor = inputs.get('input1', 1.0)
-    
-    # Define time points and values
-    time_points = [0.0, 33.0, 100.0]
-    data_values = [scaling_factor * (t * 0.5) for t in time_points]
-    
-    # Return as time series
-    return {
-        'goldsim_timeseries_output_1': {
-            'is_calendar': False,           # False for elapsed time, True for calendar dates
-            'data_type': 'instantaneous',   # 'instantaneous', 'constant', 'change', or 'discrete'
-            'times': time_points,
-            'values': data_values
-        }
-    }
-```
-
-**Time Series Output Requirements**:
-- Use key format: `goldsim_timeseries_output_1`, `goldsim_timeseries_output_2`, etc.
-- Include `is_calendar`, `data_type`, `times`, and `values` fields
-- Calculate output count as: 8 (header) + 2 × (number of time points)
-- `times` and `values` lists must have the same length
 
 ### Error Reporting
 
@@ -163,19 +118,17 @@ def goldsim_calculate(inputs):
 - **Windows 64-bit**
 - **NumPy** (optional, for numerical computations)
 
-
 ## Supported Data Types
 
 ### Input Types
 - **Scalar**: Single numeric values
-- **Vector**: Arrays of numeric values
+- **Vector**: Arrays of numeric values  
 - **Time Series**: GoldSim time series data (automatically unpacked into dictionaries)
 
 ### Output Types
 - **Scalar**: Single numeric values
 - **Vector**: Arrays of numeric values
-- **Time Series**: GoldSim time series data (automatically packed from dictionaries)
-- **Lookup Table**: GoldSim lookup table data (automatically packed from dictionaries)
+- **Time Series**: Not currently supported (known limitation)
 
 ## Python Script Interface
 
@@ -218,13 +171,12 @@ def goldsim_calculate(inputs):
 
 The `examples/` directory contains working examples for common use cases:
 
-- **`Scalar to Scalar`**: Basic scalar input → scalar output
-- **`Scalar to Vector`**: Scalar input → vector output
-- **`Vector to Scalar.py`**: Vector input → scalar output
-- **`LookupTable Output`**: Generate an import a lookup table into GoldSim
-- **`Time Series Input`**: Time series input → scalar output 
-- **`Time Series Output`**: Scalar input → time series output
-- **`Numpy Library`**: Demonstrate how to import python libraries
+- **`1_scalar_to_scalar.py`**: Basic scalar input → scalar output
+- **`2_scalar_to_vector.py`**: Scalar input → vector output (e.g., concentration calculations)
+- **`3_vector_to_scalar.py`**: Vector input → scalar output (e.g., statistical analysis)
+- **`4_lookup_table_1d.py`**: 1D interpolation and lookup tables
+- **`5_timeseries_to_scalar.py`**: Time series input → scalar output (e.g., statistical analysis)
+- **`6_numpy_statistics.py`**: Includes the numpy library
 
 To use an example:
 1. Copy the desired example file to your model directory
@@ -286,6 +238,7 @@ GSPy creates detailed logs for troubleshooting. Check the console output and any
 
 ## Known Limitations
 
+- **Time Series Output**: Creating time series outputs from Python is not currently supported due to format compatibility issues
 - **Python Version**: Currently tested with Python 3.13. Other versions may require recompilation
 
 ## Version History
