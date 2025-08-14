@@ -127,13 +127,12 @@ def goldsim_calculate(inputs):
 
 ### **Fully Supported Input Types**
 - **Scalar**: Single numeric values → `{'input1': 5.0}`
-- **Vector**: Multiple numeric values → `{'input1': 1.0, 'input2': 2.0, ...}`
+- **Non-scalar**: Multiple numeric values → `{'input1': 1.0, 'input2': 2.0, ...}`
 - **Time Series**: GoldSim time series → `{'input1': {'times': [...], 'values': [...]}}`
 
 ### **Fully Supported Output Types**
 - **Scalar**: Single values → `{'output1': 5.0}`
-- **Vector**: Lists of values → `{'output1': [1.0, 2.0, 3.0]}`
-- **Multiple Scalars**: Separate outputs → `{'output1': 5.0, 'output2': 10.0}`
+- **Non-scalar**: Lists of values → `{'output1': [1.0, 2.0, 3.0]}`
 - **Lookup Tables**: 1D tables → `{'goldsim_lookup_table_1d_output_1': {...}}`
 - **Time Series**: Native GoldSim format → `{'goldsim_timeseries_output_1': {...}}`
 
