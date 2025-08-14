@@ -1,13 +1,6 @@
 # GSPy Example 1: Scalar to Scalar
 # This script takes a single numerical input and returns a single numerical output.
 
-def gspy_info():
-    """
-    Declares the I/O interface for this script.
-    This function is required for dynamic I/O detection.
-    """
-    return {'inputs': 1, 'outputs': 1}
-
 def goldsim_calculate(inputs):
     """
     Takes one input named 'input1' and returns one output named 'output1'.

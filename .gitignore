@@ -33,10 +33,13 @@ __pycache__/
 # Log files
 *.txt
 gspy_log.txt
+GSPyDiagnostics.txt
+python_debug.txt
 
 # Test files (keep examples and gsm directories)
 test_environment/
-gspy_script.py
+test_*.py
+quick_test.py
 
 # Development scripts
 build_*.bat

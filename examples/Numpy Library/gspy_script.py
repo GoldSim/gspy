@@ -46,7 +46,7 @@ def goldsim_calculate(inputs):
         
         # Calculate statistics using NumPy functions
         mean_val = np.mean(data)
-        std_val = np.std(data, ddof=1)  # Sample standard deviation
+        std_val = np.std(data)  # Sample standard deviation
         min_val = np.min(data)
         max_val = np.max(data)
         
@@ -79,44 +79,3 @@ def goldsim_calculate(inputs):
             'output4': 0.0
         }
 
-
-# Test the function when run directly
-if __name__ == "__main__":
-    print("Testing NumPy Statistics Example")
-    print("=" * 40)
-    
-    # Test with sample data
-    test_inputs = {
-        'input1': 10.5,
-        'input2': 12.3,
-        'input3': 9.8,
-        'input4': 15.2,
-        'input5': 11.1
-    }
-    
-    # Check NumPy availability
-    try:
-        import numpy as np
-        print(f"✅ NumPy version: {np.__version__}")
-    except ImportError:
-        print("❌ NumPy not available!")
-        exit(1)
-    
-    # Run the calculation
-    info = gspy_info()
-    print(f"\nInterface: {info['inputs']} inputs → {info['outputs']} outputs")
-    
-    result = goldsim_calculate(test_inputs)
-    
-    print(f"\nResults:")
-    print(f"  Mean (output1): {result['output1']:.3f}")
-    print(f"  Std Dev (output2): {result['output2']:.3f}")
-    print(f"  Minimum (output3): {result['output3']:.3f}")
-    print(f"  Maximum (output4): {result['output4']:.3f}")
-    
-    # Verify with manual calculation
-    manual_mean = sum(test_inputs.values()) / len(test_inputs)
-    print(f"\nVerification:")
-    print(f"  Manual mean: {manual_mean:.3f}")
-    print(f"  NumPy mean: {result['output1']:.3f}")
-    print(f"  Match: {'✅' if abs(manual_mean - result['output1']) < 1e-10 else '❌'}")

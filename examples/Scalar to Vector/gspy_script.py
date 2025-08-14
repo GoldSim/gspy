@@ -31,12 +31,3 @@ def goldsim_calculate(inputs):
     # The entire list is returned as a single output. GoldSim must be
     # configured to expect a vector output of size 3 for this output.
     return {'output1': concentrations}
-
-# Test the function if run directly
-if __name__ == "__main__":
-    test_inputs = {'input1': 10.0}
-    result = goldsim_calculate(test_inputs)
-    print(f"Test: goldsim_calculate({test_inputs}) = {result}")
-    print(f"Flow rate: {test_inputs['input1']}")
-    print(f"Concentrations: A={result['output1'][0]:.1f}, B={result['output1'][1]:.1f}, C={result['output1'][2]:.1f}")
-    print("Expected: A=15.0, B=22.1, C=9.5")

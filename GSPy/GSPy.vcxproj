@@ -106,7 +106,8 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(GSPY)\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\JasonLillywhite\AppData\Local\Programs\Python\Python313\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>python313.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -128,7 +129,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(GSPY)\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\JasonLillywhite\AppData\Local\Programs\Python\Python313\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>python313.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -137,7 +138,9 @@
     <ClCompile Include="GSPyInterface.cpp" />
     <ClCompile Include="DiagnosticsManager.cpp" />
     <ClCompile Include="DataMarshaller.cpp" />
+    <ClCompile Include="LookupTableMarshaller.cpp" />
     <ClCompile Include="PythonEnvManager.cpp" />
+    <ClCompile Include="TimeSeriesMarshaller.cpp" />
     <ClCompile Include="UserScriptAdapter.cpp" />
     <ClCompile Include="PythonCallbacks.cpp" />
   </ItemGroup>
@@ -146,7 +149,9 @@
     <ClInclude Include="GSPyInterface.h" />
     <ClInclude Include="DiagnosticsManager.h" />
     <ClInclude Include="DataMarshaller.h" />
+    <ClInclude Include="LookupTableMarshaller.h" />
     <ClInclude Include="PythonEnvManager.h" />
+    <ClInclude Include="TimeSeriesMarshaller.h" />
     <ClInclude Include="UserScriptAdapter.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>

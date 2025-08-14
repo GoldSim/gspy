@@ -7,14 +7,18 @@ class UserScriptAdapter {
 public:
     UserScriptAdapter();
     ~UserScriptAdapter();
-    
-    bool LoadScript(const std::string& scriptName);
-    bool HasGoldSimCalculate() const;
-    PyObject* CallGoldSimCalculate(PyObject* inputsDict, std::string& errorMsg);
-    
-    // Exposed for UpdateIOInfo function
-    PyObject* pFunc_;
+
+    bool Initialize(const std::string& scriptPath);
+    void GetIOArguments(int& inputs, int& outputs);
+    PyObject* RunCalculation(const double* inargs, int input_count);
 
 private:
+    // Helper methods
+    bool LoadScript(const std::string& scriptPath);
+    void UnloadScript();
+
+    // Member variables use a trailing underscore
     PyObject* pModule_;
+    PyObject* pFunc_goldsim_calculate_;
+    PyObject* pFunc_gspy_info_;
 };

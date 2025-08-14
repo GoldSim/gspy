@@ -33,18 +33,3 @@ def goldsim_calculate(inputs):
     
     # Return the single scalar result.
     return {'output1': total_sum}
-
-# Test the function if run directly
-if __name__ == "__main__":
-    # Test with a 4-element vector
-    test_inputs = {
-        'input1': 10.0,
-        'input2': 20.0, 
-        'input3': 15.0,
-        'input4': 5.0
-    }
-    result = goldsim_calculate(test_inputs)
-    print(f"Test: goldsim_calculate({test_inputs}) = {result}")
-    print(f"Input vector: {[test_inputs[f'input{i}'] for i in range(1, 5)]}")
-    print(f"Sum: {result['output1']}")
-    print("Expected: 10 + 20 + 15 + 5 = 50")
