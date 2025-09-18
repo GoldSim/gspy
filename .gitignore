@@ -1,0 +1,76 @@
+# Build outputs
+bin/
+x64/
+Release/
+Debug/
+*.dll
+*.lib
+*.exp
+*.pdb
+*.exe
+*.obj
+*.idb
+*.ipdb
+*.iobj
+*.ilk
+*.tlog
+*.recipe
+*.zip
+
+# Visual Studio files
+.vs/
+.vscode/
+*.vcxproj.user
+*.sln.docstates
+*.suo
+*.user
+*.userosscache
+*.sln.docstates.json
+
+# Temporary files
+*.tmp
+*.temp
+*~
+UpgradeLog.htm
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Log files (be specific to avoid excluding documentation)
+*_log.txt
+*.log
+GSPy_*.txt
+*_Test_log.txt
+
+# Development scripts
+build_*.bat
+copy_*.bat
+*.cmake
+CMakeFiles/
+CMakeCache.txt
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+*.swp
+*.swo
+
+# Package manager files
+vcpkg_installed/
+
+# GSPy specific binaries
+*.dll
+*.pyd
+
+# GoldSim binary files
+*.gsm

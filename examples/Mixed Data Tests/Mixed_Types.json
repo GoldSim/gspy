@@ -1,0 +1,86 @@
+{
+  "python_path": "C:\\Users\\JasonLillywhite\\AppData\\Local\\Programs\\Python\\Python313",
+  "script_path": "mixed_types.py",
+  "function_name": "process_data",
+  "inputs": [
+    {
+      "name": "input_vector",
+      "type": "vector",
+      "dimensions": [ 5 ]
+    },
+    {
+      "name": "scalar_1",
+      "type": "scalar",
+      "dimensions": []
+    },
+    {
+      "name": "scalar_2",
+      "type": "scalar",
+      "dimensions": []
+    },
+    {
+      "name": "input_matrix",
+      "type": "matrix",
+      "dimensions": [ 3, 2 ]
+    },
+    {
+      "name": "scalar_3",
+      "type": "scalar",
+      "dimensions": []
+    },
+    {
+      "name": "timeseries_1",
+      "type": "timeseries",
+      "dimensions": []
+    },
+    {
+      "name": "timeseries_2",
+      "type": "timeseries",
+      "dimensions": []
+    },
+	{
+      "name": "scalar_4",
+      "type": "scalar",
+      "dimensions": []
+    }
+  ],
+  "outputs": [
+    {
+      "name": "output_matrix",
+      "type": "matrix",
+      "dimensions": [ 4, 2 ]
+    },
+    {
+      "name": "output_timeseries",
+      "type": "timeseries",
+      "dimensions": [],
+      "max_points": 1000
+    },
+    {
+      "name": "output_scalar_1",
+      "type": "scalar",
+      "dimensions": []
+    },
+    {
+      "name": "output_table",
+      "type": "table",
+      "max_elements": 500
+    },
+
+    {
+      "name": "output_vector_1",
+      "type": "vector",
+      "dimensions": [ 6 ]
+    },
+    {
+      "name": "output_vector_2",
+      "type": "vector",
+      "dimensions": [ 3 ]
+    },
+    {
+      "name": "output_scalar_2",
+      "type": "scalar",
+      "dimensions": []
+    }
+  ]
+}

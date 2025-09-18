@@ -1,0 +1,373 @@
+#include <cstdlib>
+
+// Includes and macro definitions for Python and NumPy
+#ifdef _DEBUG
+    #undef _DEBUG
+    #include <Python.h>
+    #define _DEBUG
+#else
+    #include <Python.h>
+#endif
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#include <numpy/ndarrayobject.h>
+
+#include "PythonManager.h"
+#include "GSPY_Error.h"
+#include <fstream>
+#include <vector>
+#include "json.hpp"
+#include "Logger.h"
+#include "TimeSeriesManager.h"
+#include "ConfigManager.h"
+#include "LookupTableManager.h"
+
+using json = nlohmann::json;
+
+static json config;
+static PyObject* pModule = nullptr;
+static PyObject* pFunc = nullptr;
+
+// =================================================================
+// ## Specialized Cohorts (Private Helper Functions) ##
+// =================================================================
+static std::string read_config() {
+    std::string config_path = GetConfigFilename();
+    Log("Reading config file: " + config_path);
+    std::ifstream f(config_path);
+    if (f.is_open()) {
+        Log("Config file opened successfully.");
+        std::string file_contents((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+        f.clear();
+        f.seekg(0, std::ios::beg); // Reset file pointer for parsing
+        try {
+            config = json::parse(file_contents);
+            Log("Config file parsed successfully.");
+            return ""; // Success
+        }
+        catch (json::parse_error& e) {
+            Log("JSON parse error: " + std::string(e.what()));
+            return "JSON parse error: " + std::string(e.what()); // Failure
+        }
+    }
+    else {
+        Log("Error: Could not open config.json at path: " + config_path);
+        return "Error: Could not open config.json"; // Failure
+    }
+}
+
+// Helper function to calculate total elements from dimensions array
+static int calculate_total_elements(const json& dimensions) {
+    if (dimensions.empty()) return 1; // Scalar
+    int total = 1;
+    for (int dim : dimensions) {
+        total *= dim;
+    }
+    return total;
+}
+
+// --- Initializes the NumPy C-API ---
+static bool initialize_numpy(std::string& errorMessage) {
+    Log("Initializing NumPy C-API...");
+    if (_import_array() < 0) {
+        errorMessage = "Error: Could not initialize NumPy C-API.";
+        Log(errorMessage);
+        PyErr_Print();
+        return false;
+    }
+    Log("NumPy C-API initialized successfully.");
+    return true;
+}
+
+// --- Adds the current directory to Python's search path ---
+static bool add_script_path_to_sys() {
+    Log("Adding current directory to Python sys.path...");
+    PyObject* sys = PyImport_ImportModule("sys");
+    PyObject* path = PyObject_GetAttrString(sys, "path");
+    PyList_Append(path, PyUnicode_FromString("."));
+    Py_DECREF(path);
+    Py_DECREF(sys);
+    Log("Current directory added to path.");
+    return true;
+}
+
+// --- Loads the user's script and gets the target function ---
+static bool load_script_and_function(std::string& errorMessage) {
+    std::string script_path_full = config["script_path"];
+    std::string function_name = config["function_name"];
+    Log("Script path from config: " + script_path_full);
+    Log("Function name from config: " + function_name);
+
+    std::string script_path_module = script_path_full;
+    size_t dot_pos = script_path_module.find(".py");
+    if (dot_pos != std::string::npos) {
+        script_path_module = script_path_module.substr(0, dot_pos);
+    }
+
+    Log("Attempting to import Python module: " + script_path_module);
+    pModule = PyImport_ImportModule(script_path_module.c_str());
+
+    if (pModule != nullptr) {
+        Log("Module imported successfully.");
+        Log("Attempting to get function '" + function_name + "' from module...");
+        pFunc = PyObject_GetAttrString(pModule, function_name.c_str());
+
+        if (pFunc && PyCallable_Check(pFunc)) {
+            Log("Function found successfully.");
+            return true;
+        }
+        else {
+            errorMessage = "Error: Cannot find function '" + function_name + "' in script '" + script_path_full + "'.";
+            Log(errorMessage);
+            return false;
+        }
+    }
+    else {
+        PyErr_Print();
+        errorMessage = "Error: Failed to load Python script '" + script_path_full + "'. Check for syntax errors or missing dependencies in the script.";
+        Log(errorMessage);
+        return false;
+    }
+}
+
+// This function prepares the tuple of arguments to be sent to Python.
+static PyObject* MarshalInputsToPython(const json& inputs_config, double* inargs) {
+    Log("Preparing " + std::to_string(inputs_config.size()) + " input argument(s) for Python.");
+    PyObject* pArgs = PyTuple_New(inputs_config.size());
+    double* current_inarg_pointer = inargs; // Use a pointer we can advance
+
+    for (int i = 0; i < inputs_config.size(); ++i) {
+        const auto& input = inputs_config[i];
+        std::string type = input["type"];
+        PyObject* pValue = nullptr;
+
+        Log("  Input #" + std::to_string(i) + ": Type='" + type + "'");
+
+        if (type == "timeseries") {
+            // Delegate to our specialist
+            pValue = MarshalGoldSimTimeSeriesToPython(current_inarg_pointer, input);
+        }
+        else if (type == "scalar") {
+            pValue = PyFloat_FromDouble(*current_inarg_pointer);
+            current_inarg_pointer += 1; // Advance pointer by 1
+        }
+        else { // Vector or Matrix
+            int num_elements = calculate_total_elements(input["dimensions"]);
+            const auto& dims_json = input["dimensions"];
+            std::vector<npy_intp> dims_vec;
+            for (const auto& dim : dims_json) {
+                dims_vec.push_back(dim.get<npy_intp>());
+            }
+            pValue = PyArray_SimpleNewFromData(static_cast<int>(dims_vec.size()), dims_vec.data(), NPY_FLOAT64, current_inarg_pointer);
+            current_inarg_pointer += num_elements; // Advance pointer by the size of the array
+        }
+        PyTuple_SetItem(pArgs, i, pValue); // Steals reference to pValue
+    }
+    return pArgs;
+}
+
+// This function unpacks the tuple of results from Python and copies the data back.
+static bool MarshalOutputsToCpp(PyObject* pResultTuple, const json& outputs_config, double* outargs, std::string& errorMessage) {
+    if (!pResultTuple || !PyTuple_Check(pResultTuple)) {
+        PyErr_Print();
+        errorMessage = "Error: Python call failed or did not return a tuple.";
+        Log(errorMessage);
+        return false;
+    }
+
+    Log("Python call successful. Processing " + std::to_string(PyTuple_Size(pResultTuple)) + " result(s).");
+    double* current_outarg_pointer = outargs;
+
+    for (Py_ssize_t i = 0; i < PyTuple_Size(pResultTuple); ++i) {
+        PyObject* pItem = PyTuple_GetItem(pResultTuple, i);
+        const auto& output_config = outputs_config[i];
+        std::string type = output_config["type"];
+        Log("  Output #" + std::to_string(i) + ": Type='" + type + "'");
+
+        if (type == "timeseries") {
+            if (!MarshalPythonTimeSeriesToGoldSim(pItem, output_config, current_outarg_pointer, errorMessage)) {
+                Py_DECREF(pResultTuple);
+                return false;
+            }
+        }
+        else if (type == "table") {
+            if (!MarshalPythonLookupTableToGoldSim(pItem, output_config, current_outarg_pointer, errorMessage)) {
+                Py_DECREF(pResultTuple);
+                return false;
+            }
+        }
+        else if (PyArray_Check(pItem)) { // Handle Vector or Matrix
+            int expected_size = calculate_total_elements(output_config["dimensions"]);
+            memcpy(current_outarg_pointer, PyArray_DATA((PyArrayObject*)pItem), expected_size * sizeof(double));
+            current_outarg_pointer += expected_size;
+        }
+        else { // Handle Scalar
+            *current_outarg_pointer = PyFloat_AsDouble(pItem);
+            current_outarg_pointer += 1;
+        }
+    }
+    Py_DECREF(pResultTuple);
+    return true;
+}
+
+// =================================================================
+// ## The Commander (Public Functions) ##
+// =================================================================
+
+// --- The main InitializePython function ---
+bool InitializePython(std::string& errorMessage) {
+    Log("--- Initializing Python Manager ---");
+
+    if (config.empty()) {
+        errorMessage = read_config();
+        if (!errorMessage.empty()) {
+            Log("Error reading config: " + errorMessage);
+            return false;
+        }
+        Log("Config read successfully.");
+    }
+
+    if (!Py_IsInitialized()) {
+        Log("Python interpreter is not initialized. Initializing now...");
+
+        PyConfig py_config;
+        PyConfig_InitPythonConfig(&py_config);
+
+        // --- REVERTED LOGIC: Get Python Home from the config file ---
+        if (config.contains("python_path")) {
+            std::string python_home = config["python_path"];
+            Log("Using python_path from config: " + python_home);
+            PyStatus status = PyConfig_SetBytesString(&py_config, &py_config.home, python_home.c_str());
+            if (PyStatus_Exception(status)) {
+                errorMessage = "Error: Failed to set Python Home from config path.";
+                Log(errorMessage);
+                PyConfig_Clear(&py_config);
+                return false;
+            }
+        }
+        else {
+            errorMessage = "Error: 'python_path' key is missing from the config file.";
+            Log(errorMessage);
+            PyConfig_Clear(&py_config);
+            return false;
+        }
+
+        PyStatus status = Py_InitializeFromConfig(&py_config);
+        PyConfig_Clear(&py_config);
+        if (PyStatus_Exception(status)) {
+            errorMessage = "Error: Py_InitializeFromConfig failed.";
+            Log(errorMessage);
+            return false;
+        }
+
+        if (!initialize_numpy(errorMessage)) return false;
+        if (!add_script_path_to_sys()) return false;
+        if (!load_script_and_function(errorMessage)) return false;
+    }
+    else {
+        Log("Python interpreter is already initialized.");
+    }
+
+    Log("--- Python Manager initialization successful ---");
+    return true;
+}
+
+void FinalizePython() {
+    // LOGGING: Announce the start of the cleanup process.
+    Log("--- Finalizing Python Manager ---");
+
+    Py_XDECREF(pFunc);
+    Py_XDECREF(pModule);
+
+    if (Py_IsInitialized()) {
+        // LOGGING: Confirm that we are shutting down the interpreter.
+        Log("Shutting down Python interpreter.");
+        Py_Finalize();
+    }
+    else {
+        // LOGGING: Note if no shutdown was necessary.
+        Log("Python interpreter was not initialized. No cleanup needed.");
+    }
+}
+
+int GetNumberOfInputs() {
+    if (config.empty()) return 0;
+
+    int total_inputs = 0;
+    for (const auto& input : config["inputs"]) {
+        // If any input is a dynamic type, we must return -1.
+        if (input["type"] == "timeseries") {
+            Log("GetNumberOfInputs detected a dynamic time series. Returning -1.");
+            return -1;
+        }
+        total_inputs += calculate_total_elements(input["dimensions"]);
+    }
+
+    Log("GetNumberOfInputs calculated a total of: " + std::to_string(total_inputs));
+    return total_inputs;
+}
+
+int GetNumberOfOutputs() {
+    if (config.empty()) return 0;
+
+    int total_outputs = 0;
+    for (const auto& output : config["outputs"]) {
+        std::string type = output["type"];
+
+        if (type == "timeseries") {
+            // Your correct, detailed calculation for Time Series
+            int max_points = output.value("max_points", 1);
+            const auto& dims = output["dimensions"];
+            int data_multiplier = 1;
+            // Note: A scalar TS has 0 dims, a vector has 1, a matrix has 2.
+            // The data array shape is (rows, cols, time_points).
+            // data_multiplier here will be rows * cols.
+            if (!dims.empty()) data_multiplier *= dims[0].get<int>(); // rows
+            if (dims.size() > 1) data_multiplier *= dims[1].get<int>(); // cols
+
+            // Total size = 8 metadata doubles + N timestamps + (N * rows * cols) data values
+            total_outputs += 8 + max_points + (max_points * data_multiplier);
+        }
+        else if (type == "table") {
+            // For tables, the structure is more complex, so we rely on the user's max_elements estimate.
+            total_outputs += output.value("max_elements", 1);
+        }
+        else {
+            // Standard calculation for fixed-size arrays (scalar, vector, matrix)
+            total_outputs += calculate_total_elements(output["dimensions"]);
+        }
+    }
+
+    Log("GetNumberOfOutputs calculated a total of: " + std::to_string(total_outputs));
+    return total_outputs;
+}
+
+// --- The ExecuteCalculation function is now a clean, high-level commander ---
+void ExecuteCalculation(double* inargs, double* outargs, std::string& errorMessage) {
+    Log("--- Executing Calculation Cycle ---");
+    if (!pFunc) {
+        errorMessage = "Error: Python function not loaded.";
+        Log(errorMessage);
+        return;
+    }
+
+    // 1. Delegate argument preparation
+    PyObject* pArgs = MarshalInputsToPython(config["inputs"], inargs);
+    if (!pArgs) {
+        errorMessage = "Error: Failed to marshal inputs for Python.";
+        Log(errorMessage);
+        return;
+    }
+
+    // 2. Call the Python function
+    Log("Calling Python function...");
+    PyObject* pResultTuple = PyObject_CallObject(pFunc, pArgs);
+    Py_DECREF(pArgs);
+
+    // 3. Delegate result processing
+    if (!MarshalOutputsToCpp(pResultTuple, config["outputs"], outargs, errorMessage)) {
+        // MarshalOutputsToCpp handles its own error logging and Py_DECREF
+        return;
+    }
+
+    Log("--- Calculation Cycle Complete ---");
+}

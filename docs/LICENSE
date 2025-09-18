@@ -1,0 +1,74 @@
+MIT License
+
+Copyright (c) 2025 GoldSim Technology Group
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+================================================================================
+
+ADDITIONAL DISCLAIMERS AND TERMS
+
+IMPORTANT NOTICE: This software integrates with GoldSim simulation software and
+Python interpreters. Users are responsible for ensuring compatibility and 
+proper function in their specific environment.
+
+DISCLAIMER OF WARRANTIES:
+- No warranty is provided regarding compatibility with any specific version
+  of GoldSim, Python, or third-party libraries
+- No warranty is provided regarding performance, accuracy, or reliability
+- Users assume full responsibility for testing and validation
+
+LIMITATION OF LIABILITY:
+- In no event shall GoldSim Technology Group be liable for any special,
+  incidental, indirect, or consequential damages whatsoever
+- This includes but is not limited to: data loss, system corruption, 
+  business interruption, or financial losses
+- Maximum liability is limited to the amount paid for the software (if any)
+
+USER RESPONSIBILITIES:
+- Thorough testing in development environment before production use
+- Validation of all calculations and results produced by the software
+- Compliance with applicable laws, regulations, and corporate policies
+- Regular review of security implications and risk assessment
+- Backup of critical data before use
+
+THIRD-PARTY COMPONENTS:
+- This software may interact with Python libraries and GoldSim software
+- Users are responsible for compliance with all applicable third-party licenses
+- GoldSim Technology Group does not warrant or support third-party components
+
+PROFESSIONAL USE NOTICE:
+- This software is not certified for life-safety, mission-critical, or 
+  high-reliability applications without additional validation
+- Users in regulated industries must ensure compliance with applicable standards
+- Engineering and scientific users must validate all calculations independently
+
+SUPPORT AND UPDATES:
+- No guarantee of support, updates, or maintenance is provided
+- Software is provided on an "as-available" basis
+- Community contributions are welcome but not guaranteed
+
+By using this software, you acknowledge that you have read, understood, and 
+agree to these terms and accept full responsibility for the consequences of use.
+
+================================================================================
+
+For questions regarding licensing or terms of use, please contact:
+GoldSim Technology Group
+https://www.goldsim.com

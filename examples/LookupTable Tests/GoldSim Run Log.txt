@@ -1,0 +1,34 @@
+GoldSim 15.0.0257
+Simulation Filename:	Test LookupTable.gsm
+Simulation Start Time:	9/15/2025 9:52:46 AM
+Simulation Run Time:	0.1 s
+Model Author Name:	Jason Lillywhite
+Analysis Description:	(not specified)
+
+*** Simulation Time Settings ***
+Time Basis:  Elapsed Time
+Time Unit: day
+Duration: 100 day
+Basic Timestep: 1 day
+Reporting Periods: none
+Scheduled Updates: 101
+Number of Plot Points: 101
+Final Value Capture Times:
+  At the end of the simulation
+
+*** Simulation Monte-Carlo Settings ***
+Simulation Type: Probabilistic (run 1 realization)
+Latin Hypercube Sampling: enabled (using random points in strata)
+Sampling Sequences: repeated; beginning seed 1
+
+WARNINGS AND ERRORS:
+
+Realization 1
+
+0 day:
+\History 1: The result element contains one or more invalid or incomplete result items.
+
+
+0 day:
+\External1: External Dll LookupTable.dll, module GSPy initialized successfully, version = 1
+
