@@ -16,6 +16,7 @@ This project was designed to be simple, robust, and flexible, allowing modelers 
       * Time Series
       * Lookup Tables (only from Python to GoldSim)
   * **Data-Driven Configuration:** A JSON file defines the interface, allowing for configurations without changing code.
+  * **Dynamic Array Sizing:** Define the size of input vectors and matrices at runtime using scalar values from your GoldSim model.
   * **Error Handling:** Python exceptions are caught gracefully and reported directly to the GoldSim user, simplifying debugging.
   * **Diagnostic Logging:** Automatically generates a log file for each run, providing a clear trace of the DLL's operations.
 
@@ -132,6 +133,9 @@ def process_data(*args):
       * **`name`**: A descriptive name for your reference.
       * **`type`**: Can be `"scalar"`, `"vector"`, `"matrix"`, `"timeseries"`, or `"table"` (table only available for outputs).
       * **`dimensions`**: The shape of the data. Use `[]` for scalars or scalar time series, `[10]` for a 10-element vector, `[5, 3]` for a 5x3 matrix.
+      * dimensions_from (Optional): For vector and matrix inputs only, this allows you to define dimensions dynamically at runtime. Its value is an array of strings that must reference the name of preceding scalar inputs. The referenced scalar(s) must be defined as inputs **before** the dynamic array in the inputs list.
+        * For a vector: "dimensions_from": ["vector_size_scalar"]
+        * For a matrix: "dimensions_from": ["row_count_scalar", "col_count_scalar"]
       * **`max_points` / `max_elements`**: Required for dynamic **outputs** `"timeseries"` or `"table"` to pre-allocate memory (only required for outputs from python to GoldSim)
 
 ### Python Script API
@@ -450,6 +454,139 @@ Argument Order is Critical: The order of variables received in Python's *args tu
 
 Return Order is Critical: The order of variables in the return tuple from Python must exactly match their order in the "outputs" array of the JSON file.
 
+-----
+### Example 4: Dynamic Array Sizing
+The example demonstrates how to size a vector or a matrix at runtime using sclar values passed from GoldSim.
+
+**Dynamic_Size_Test.json**
+```json
+{
+  "python_path": "C:\\Users\\JasonLillywhite\\AppData\\Local\\Programs\\Python\\Python313",
+  "script_path": "test_dynamic_sizing.py",
+  "function_name": "process_data",
+  "inputs": [
+    {
+      "name": "vector_size",
+      "type": "scalar",
+      "dimensions": []
+    },
+    {
+      "name": "matrix_rows",
+      "type": "scalar", 
+      "dimensions": []
+    },
+    {
+      "name": "matrix_cols",
+      "type": "scalar",
+      "dimensions": []
+    },
+    {
+      "name": "static_scalar",
+      "type": "scalar",
+      "dimensions": []
+    },
+    {
+      "name": "static_vector",
+      "type": "vector",
+      "dimensions": [3]
+    },
+    {
+      "name": "dynamic_vector",
+      "type": "vector",
+      "dimensions_from": ["vector_size"]
+    },
+    {
+      "name": "dynamic_matrix",
+      "type": "matrix",
+      "dimensions_from": ["matrix_rows", "matrix_cols"]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "result_scalar",
+      "type": "scalar",
+      "dimensions": []
+    },
+    {
+      "name": "result_vector",
+      "type": "vector",
+      "dimensions": [5]
+    }
+  ]
+}
+```
+
+**test_dynamic_sizing.py**
+```python
+import numpy as np
+import traceback
+
+def process_data(*args):
+    """
+    Test function for dynamic sizing functionality.
+    Expected inputs:
+    0. vector_size (scalar) - controls size of dynamic_vector
+    1. matrix_rows (scalar) - controls rows of dynamic_matrix  
+    2. matrix_cols (scalar) - controls cols of dynamic_matrix
+    3. static_scalar (scalar) - regular scalar input
+    4. static_vector (vector[3]) - regular static vector
+    5. dynamic_vector (vector with size from vector_size)
+    6. dynamic_matrix (matrix with size from matrix_rows x matrix_cols)
+    """
+    try:
+        print(f"\n=== Dynamic Sizing Test ===")
+        print(f"Received {len(args)} arguments:")
+        
+        # Extract and validate inputs
+        vector_size = args[0]
+        matrix_rows = args[1] 
+        matrix_cols = args[2]
+        static_scalar = args[3]
+        static_vector = args[4]
+        dynamic_vector = args[5]
+        dynamic_matrix = args[6]
+        
+        print(f"  vector_size = {vector_size}")
+        print(f"  matrix_rows = {matrix_rows}")
+        print(f"  matrix_cols = {matrix_cols}")
+        print(f"  static_scalar = {static_scalar}")
+        print(f"  static_vector = {static_vector} (shape: {static_vector.shape})")
+        print(f"  dynamic_vector = {dynamic_vector} (shape: {dynamic_vector.shape})")
+        print(f"  dynamic_matrix = {dynamic_matrix} (shape: {dynamic_matrix.shape})")
+        
+        # Validate dynamic dimensions
+        expected_vector_size = int(vector_size)
+        expected_matrix_shape = (int(matrix_rows), int(matrix_cols))
+        
+        print(f"\nValidation:")
+        print(f"  Expected dynamic_vector size: {expected_vector_size}, actual: {dynamic_vector.shape}")
+        print(f"  Expected dynamic_matrix shape: {expected_matrix_shape}, actual: {dynamic_matrix.shape}")
+        
+        if dynamic_vector.shape == (expected_vector_size,):
+            print("  ✓ Dynamic vector size is correct!")
+        else:
+            print("  ✗ Dynamic vector size mismatch!")
+            
+        if dynamic_matrix.shape == expected_matrix_shape:
+            print("  ✓ Dynamic matrix shape is correct!")
+        else:
+            print("  ✗ Dynamic matrix shape mismatch!")
+        
+        # Create outputs
+        result_scalar = np.sum(static_vector) + static_scalar + np.sum(dynamic_vector) + np.sum(dynamic_matrix)
+        result_vector = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        
+        print(f"\nOutputs:")
+        print(f"  result_scalar = {result_scalar}")
+        print(f"  result_vector = {result_vector}")
+        
+        return (result_scalar, result_vector)
+    
+    except Exception as e:
+        print(f"!!! PYTHON EXCEPTION !!!")
+        print(traceback.format_exc())
+        return (0.0, np.zeros(5))
+```
 -----
 
 ## Building from Source
