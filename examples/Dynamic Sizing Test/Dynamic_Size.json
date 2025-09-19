@@ -1,0 +1,54 @@
+{
+  "python_path": "C:\\Users\\JasonLillywhite\\AppData\\Local\\Programs\\Python\\Python313",
+  "script_path": "dynamic_sizing.py",
+  "function_name": "process_data",
+  "inputs": [
+    {
+      "name": "vector_size",
+      "type": "scalar",
+      "dimensions": []
+    },
+    {
+      "name": "matrix_rows",
+      "type": "scalar", 
+      "dimensions": []
+    },
+    {
+      "name": "matrix_cols",
+      "type": "scalar",
+      "dimensions": []
+    },
+    {
+      "name": "static_scalar",
+      "type": "scalar",
+      "dimensions": []
+    },
+    {
+      "name": "static_vector",
+      "type": "vector",
+      "dimensions": [3]
+    },
+    {
+      "name": "dynamic_vector",
+      "type": "vector",
+      "dimensions_from": ["vector_size"]
+    },
+    {
+      "name": "dynamic_matrix",
+      "type": "matrix",
+      "dimensions_from": ["matrix_rows", "matrix_cols"]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "result_scalar",
+      "type": "scalar",
+      "dimensions": []
+    },
+    {
+      "name": "result_vector",
+      "type": "vector",
+      "dimensions": [5]
+    }
+  ]
+}

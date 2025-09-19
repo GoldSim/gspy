@@ -36,7 +36,7 @@ extern "C" void GSPy(int methodID, int* status, double* inargs, double* outargs)
         break;
 
     case 2: // Report Version
-        outargs[0] = 1.6;
+        outargs[0] = 1.7;
         break;
 
     case 3: // Report Arguments

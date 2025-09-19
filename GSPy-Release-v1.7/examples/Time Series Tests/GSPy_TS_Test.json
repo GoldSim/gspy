@@ -1,0 +1,31 @@
+{
+  "python_path": "C:\\Users\\JasonLillywhite\\AppData\\Local\\Programs\\Python\\Python313",
+  "script_path": "test_timeseries.py",
+  "function_name": "process_data",
+  "inputs": [
+    {
+      "name": "input_timeseries1",
+      "type": "timeseries",
+      "dimensions": []
+    },
+    {
+      "name": "input_timeseries2",
+      "type": "timeseries",
+      "dimensions": [2]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "timeseries_1",
+      "type": "timeseries",
+      "dimensions": [2],
+      "max_points": 1000
+    },
+    {
+      "name": "timeseries_2",
+      "type": "timeseries",
+      "dimensions": [],
+      "max_points": 1000
+    }
+  ]
+}

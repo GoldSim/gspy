@@ -1,19 +1,20 @@
 {
   "python_path": "C:\\Users\\JasonLillywhite\\AppData\\Local\\Programs\\Python\\Python313",
-  "script_path": "scalar to scalar.py", 
+  "script_path": "lookup_table_script.py",
   "function_name": "process_data",
   "inputs": [
     {
-      "name": "size_param",
+      "name": "input_scalar",
       "type": "scalar",
       "dimensions": []
     }
   ],
   "outputs": [
     {
-      "name": "result",
-      "type": "scalar",
-      "dimensions": []
+      "name": "output_table",
+      "type": "table",
+      "max_elements": 500
     }
   ]
 }
+
