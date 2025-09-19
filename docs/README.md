@@ -32,9 +32,9 @@ GSPy links three files together: the DLL, the JSON configuration, and the Python
 
 **The DLL and JSON file names MUST Match:** The GSPy DLL and its JSON configuration file must have the exact same name and be in the same directory. The DLL looks for a .json file with its own name.
 
-✅ Correct: GSPy_Model.dll and GSPy_Model.json
+Correct: GSPy_Model.dll and GSPy_Model.json
 
-❌ Incorrect: GSPy_Model.dll and config.json
+Incorrect: GSPy_Model.dll and config.json
 
 The JSON points to the Python Script: The "script_path" field inside the JSON file tells the DLL which Python script to execute. The Python script can be named anything and be located anywhere, as long as the path is correct.
 
@@ -563,14 +563,14 @@ def process_data(*args):
         print(f"  Expected dynamic_matrix shape: {expected_matrix_shape}, actual: {dynamic_matrix.shape}")
         
         if dynamic_vector.shape == (expected_vector_size,):
-            print("  ✓ Dynamic vector size is correct!")
+            print("  Dynamic vector size is correct!")
         else:
-            print("  ✗ Dynamic vector size mismatch!")
+            print("  Dynamic vector size mismatch!")
             
         if dynamic_matrix.shape == expected_matrix_shape:
-            print("  ✓ Dynamic matrix shape is correct!")
+            print("  Dynamic matrix shape is correct!")
         else:
-            print("  ✗ Dynamic matrix shape mismatch!")
+            print("  Dynamic matrix shape mismatch!")
         
         # Create outputs
         result_scalar = np.sum(static_vector) + static_scalar + np.sum(dynamic_vector) + np.sum(dynamic_matrix)
