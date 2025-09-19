@@ -133,7 +133,7 @@ def process_data(*args):
       * **`name`**: A descriptive name for your reference.
       * **`type`**: Can be `"scalar"`, `"vector"`, `"matrix"`, `"timeseries"`, or `"table"` (table only available for outputs).
       * **`dimensions`**: The shape of the data. Use `[]` for scalars or scalar time series, `[10]` for a 10-element vector, `[5, 3]` for a 5x3 matrix.
-      * dimensions_from (Optional): For vector and matrix inputs only, this allows you to define dimensions dynamically at runtime. Its value is an array of strings that must reference the name of preceding scalar inputs. The referenced scalar(s) must be defined as inputs **before** the dynamic array in the inputs list.
+      * **`dimensions_from`** (Optional): For vector and matrix inputs only, this allows you to define dimensions dynamically at runtime. Its value is an array of strings that must reference the name of preceding scalar inputs. The referenced scalar(s) must be defined as inputs **before** the dynamic array in the inputs list.
         * For a vector: "dimensions_from": ["vector_size_scalar"]
         * For a matrix: "dimensions_from": ["row_count_scalar", "col_count_scalar"]
       * **`max_points` / `max_elements`**: Required for dynamic **outputs** `"timeseries"` or `"table"` to pre-allocate memory (only required for outputs from python to GoldSim)
