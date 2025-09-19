@@ -167,8 +167,7 @@ def process_data(*args):
 ### Example 1: Time Series Example
 This example demonstrates how to handle time series data. It passes both a scalar time series and a 2-element vector time series from GoldSim to a Python script. The script performs a simple calculation and returns two new time series back to GoldSim.
 
-GSPy_TS_Test.json
-
+**GSPy_TS_Test.json**
 This configuration defines the interface. Note the use of "type": "timeseries" and that max_points is required for outputs to pre-allocate memory.
 
 ```json
@@ -204,8 +203,7 @@ This configuration defines the interface. Note the use of "type": "timeseries" a
   ]
 }
 ```
-test_timeseries.py
-
+**test_timeseries.py**
 The Python script receives and returns time series as dictionaries. The data key holds a NumPy array where each row represents a dimension and each column represents a time step.
 
 ```python
@@ -268,8 +266,7 @@ Memory Allocation: You must specify "max_points" for any output time series in t
 
 This example demonstrates how to dynamically generate a complete GoldSim Lookup Table from within Python. It takes a single scalar value from GoldSim and uses it to construct the row labels, column labels, and the main data body of a 2D lookup table, which is then returned to GoldSim.
 
-LookupTable.json
-
+**LookupTable.json**
 The JSON configuration specifies the output type as "table". For table outputs, you must provide "max_elements" so GoldSim can pre-allocate enough memory. This should be a safe upper bound for the total number of cells in the table (rows * cols + rows + cols).
 
 ```json
@@ -294,8 +291,7 @@ The JSON configuration specifies the output type as "table". For table outputs, 
 }
 ```
 
-lookup_table_script.py
-
+**lookup_table_script.py**
 To return a lookup table, the Python script must construct and return a dictionary with a specific structure and keys. The C++ bridge code looks for these exact keys to correctly build the table in GoldSim.
 
 ```python
@@ -355,8 +351,7 @@ This is a "stress test" example that showcases the full power and flexibility of
 
 This example proves that the inputs and outputs do not need to be symmetrical. You can have any number of inputs and any number of outputs of any supported type.
 
-Mixed_Types.json
-
+**Mixed_Types.json**
 The JSON file defines the complex mapping. Notice that the inputs array has nine items, while the outputs array has seven items of different types and in a different order.
 
 ```json
@@ -385,7 +380,7 @@ The JSON file defines the complex mapping. Notice that the inputs array has nine
   ]
 }
 ```
-
+**mixed_types.py**
 The Python script correctly unpacks the nine arguments from the *args tuple. It then returns a tuple with seven results, ensuring the order matches the outputs array in the JSON file.
 
 ```python
