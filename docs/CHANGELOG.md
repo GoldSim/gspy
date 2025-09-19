@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0] - 2025-09-18
+### Added
+Dynamic Array Sizing for Inputs: Implemented a major feature allowing the dimensions of input vector and matrix types to be determined dynamically at runtime.
+* Introduced a new optional "dimensions_from" key in the JSON configuration.
+* This key allows a user to reference the name of one or more scalar inputs that will provide the size for the array's dimensions during the simulation.
+* Added comprehensive configuration validation and robust runtime error handling for this feature.
+
+### Changed
+The GSPy DLL will now report a variable number of inputs (-1) to GoldSim whenever a dynamic sizing configuration (dimensions_from) is used. This ensures GoldSim correctly handles the variable data stream.
+
 ## [1.6.0] - 2025-09-17
 
 This is a complete rewrite and architectural overhaul of the GSPy bridge. It is not backward-compatible with previous versions.
