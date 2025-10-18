@@ -151,14 +151,14 @@ def process_data(*args):
 | Scalar | `float` |
 | Vector | 1D NumPy Array |
 | Matrix | 2D NumPy Array |
-| Time Series | Python Dictionary |
+| Time Series |Python Dictionary with keys: `"timestamps"`, `"data"`, `"time_basis"`, `"data_type"`  |
 
 | To GoldSim | Returned from Python as... |
 | :--- | :--- |
 | Scalar | `float` or `int` |
 | Vector | 1D NumPy Array |
 | Matrix | 2D NumPy Array |
-| Time Series | Python Dictionary |
+| Time Series |  Python Dictionary with keys: `"timestamps"`, `"data"`, `"time_basis"`, `"data_type"` |
 | Lookup Table | Python Dictionary |
 
 -----
@@ -232,7 +232,9 @@ def process_data(*args):
     # Output 1: Pass the input vector time series straight through
     output_ts_vector = {
         "timestamps": vector_timestamps,
-        "data": vector_data
+        "data": vector_data,
+        "time_basis": input_ts_vector_dict["time_basis"],
+        "data_type": input_ts_vector_dict["data_type"]
     }
     
     # Output 2: Create a new scalar time series by adding the inputs
@@ -241,24 +243,33 @@ def process_data(*args):
     
     output_ts_scalar = {
         "timestamps": vector_timestamps,
-        "data": new_scalar_data
+        "data": new_scalar_data,
+        "time_basis": input_ts_scalar_dict["time_basis"],
+        "data_type": input_ts_scalar_dict["data_type"]
     }
 
     # 4. Return the results as a tuple in the correct order
     return (output_ts_vector, output_ts_scalar)
 
   except Exception:
-    # In case of error, return empty dictionaries to avoid GoldSim crash
-    return ({}, {})
+    # In case of error, return properly formatted empty time series
+    empty_ts = {"timestamps": np.array([0.0]), "data": np.array([0.0]), "time_basis": 0.0, "data_type": 0.0}
+    return (empty_ts, empty_ts)
 ```
 
 Notes:
 
-Data Format: Time series are passed as Python dictionaries. The required keys for returning a time series are "timestamps" and "data".
+**Time Series Dictionary Format**: Time series are passed as Python dictionaries with **four required keys**:
+- `"timestamps"`: 1D NumPy array of time values
+- `"data"`: NumPy array containing the time series values
+- `"time_basis"`: Float value (typically 0.0, pass through from input)
+- `"data_type"`: Float value (typically 0.0, pass through from input)
 
 Data Shape: The "data" value is a NumPy array. A scalar time series will have a 1D array, while a vector time series will have a 2D array of shape (number_of_elements, number_of_timesteps).
 
 Memory Allocation: You must specify "max_points" for any output time series in the JSON file. This allows GoldSim to allocate the necessary memory buffer to receive the data from Python.
+
+**Important**: Always preserve the `time_basis` and `data_type` values from input time series when creating outputs. These contain metadata that GoldSim requires.
 
 -----
 
@@ -415,7 +426,9 @@ def process_data(*args):
     # 3. Generate a new Time Series and Lookup Table
     output_timeseries = {
         "timestamps": ts_dict_1["timestamps"],
-        "data": ts_dict_1["data"] + ts_dict_2["data"]
+        "data": ts_dict_1["data"] + ts_dict_2["data"],
+        "time_basis": ts_dict_1["time_basis"],
+        "data_type": ts_dict_1["data_type"]
     }
     output_table = {
       "table_dim": 2,
@@ -438,7 +451,9 @@ def process_data(*args):
   except Exception:
     print(f"!!! PYTHON EXCEPTION !!!\n{traceback.format_exc()}")
     # In case of error, return a tuple of the correct size with dummy values
-    return (np.zeros((4,2)), {}, 0.0, {}, np.zeros(6), np.zeros(3), 0.0)
+    empty_ts = {"timestamps": np.array([0.0]), "data": np.array([0.0]), "time_basis": 0.0, "data_type": 0.0}
+    empty_table = {}
+    return (np.zeros((4,2)), empty_ts, 0.0, empty_table, np.zeros(6), np.zeros(3), 0.0)
 ```
 
 Notes:
