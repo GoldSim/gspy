@@ -54,3 +54,26 @@ std::string GetLogFilename() {
     }
     return default_name;
 }
+
+int GetLogLevel() {
+    std::string config_path = GetConfigFilename();
+    std::ifstream f(config_path);
+    
+    // Default to ERROR level for production (minimal logging)
+    int default_level = 0; // LOG_ERROR
+    
+    if (f.is_open()) {
+        try {
+            json data = json::parse(f);
+            if (data.contains("log_level")) {
+                int level = data["log_level"];
+                // Validate the level is in valid range
+                if (level >= 0 && level <= 3) {
+                    return level;
+                }
+            }
+        }
+        catch (json::parse_error&) { /* Fall through to default */ }
+    }
+    return default_level;
+}

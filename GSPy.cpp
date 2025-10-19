@@ -11,11 +11,12 @@ extern "C" void GSPy(int methodID, int* status, double* inargs, double* outargs)
     static bool logger_initialized = false;
     if (!logger_initialized) {
         std::string log_filename = GetLogFilename();
-        InitLogger(log_filename);
+        int log_level = GetLogLevel(); // Get from config file
+        InitLogger(log_filename, static_cast<LogLevel>(log_level));
         logger_initialized = true;
     }
 
-    Log("GSPy called with MethodID: " + std::to_string(methodID));
+    LogDebug("GSPy called with MethodID: " + std::to_string(methodID));
 
     *status = 0;
     std::string errorMessage;

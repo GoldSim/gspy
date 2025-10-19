@@ -53,6 +53,76 @@ To use the pre-compiled GSPy DLL, you will need:
 
 -----
 
+## Python Setup & Troubleshooting
+
+### Common Python Path Issues
+
+The most frequent issue users encounter is GSPy not finding Python. Here are the solutions:
+
+#### **Method 1: Use Full Python Path (Recommended)**
+In your JSON configuration, specify the complete path to your Python installation:
+
+```json
+{
+  "python_path": "C:\\Users\\YourUsername\\AppData\\Local\\Programs\\Python\\Python312",
+  "script_path": "your_script.py",
+  ...
+}
+```
+
+**How to find your Python path:**
+1. Open Command Prompt (Windows Key + R, type `cmd`)
+2. Type: `where python`
+3. Use the directory path (remove `\\python.exe` from the end)
+
+#### **Method 2: Add Python to System PATH**
+If you want to use a shorter path in your JSON config:
+
+1. **Windows 11/10**: Search for "Environment Variables" in Start Menu
+2. Click **"Edit the system environment variables"**
+3. Click **"Environment Variables..."** button
+4. Under **"System variables"**, find and select **"Path"**, then click **"Edit..."**
+5. Click **"New"** and add your Python installation directory (e.g., `C:\Users\YourUsername\AppData\Local\Programs\Python\Python312`)
+6. Click **"New"** again and add the Scripts directory (e.g., `C:\Users\YourUsername\AppData\Local\Programs\Python\Python312\Scripts`)
+7. Click **"OK"** on all dialogs
+8. **Restart your computer** for changes to take effect
+
+After adding to PATH, you can use shorter paths in your JSON:
+```json
+{
+  "python_path": "C:\\Python312",
+  ...
+}
+```
+
+### Verifying Your Python Setup
+
+Before using GSPy, verify your Python installation:
+
+1. **Open Command Prompt**
+2. **Test Python**: Type `python --version` - should show Python 3.8+
+3. **Test NumPy**: Type `python -c "import numpy; print('NumPy OK')"` - should print "NumPy OK"
+
+If either command fails, you need to fix your Python installation before using GSPy.
+
+### Installation Tips for Windows Users
+
+- **Use the official Python installer** from [python.org](https://python.org)
+- **Check "Add Python to PATH"** during installation
+- **Choose "Install for all users"** if you have admin rights
+- **Use Python 3.9-3.12** for best compatibility (3.13+ may have issues)
+- **Always use 64-bit Python** (required for GSPy)
+
+### If GSPy Still Can't Find Python
+
+1. **Check your JSON `python_path`** matches your actual Python installation directory
+2. **Verify Python is 64-bit**: `python -c "import platform; print(platform.architecture())"`
+3. **Check file permissions** - ensure GSPy can read the Python directory
+4. **Try absolute paths** in your JSON config rather than relative paths
+5. **Restart GoldSim** after changing environment variables
+
+-----
+
 ## Quick Start Guide
 
 This guide will run a simple "scalar in, scalar out" test.
@@ -74,6 +144,7 @@ In the same folder, create a new text file named **`scalar_test.json`** and past
   "python_path": "C:\\Users\\username\\AppData\\Local\\Programs\\Python\\Python313",
   "script_name": "scalar_test.py",
   "function_name": "process_data",
+  "log_level": 0,
   "inputs": [
     {
       "name": "input_scalar",
@@ -97,17 +168,24 @@ In the same folder, create a script named **`scalar_test.py`** (the name doesn't
 
 ```python
 import traceback
+import gspy
 
 def process_data(*args):
   """
   Receives one scalar, multiplies it by 10, and returns one scalar.
   """
   try:
+    gspy.log("Starting scalar calculation", 2)  # INFO level
     input_scalar = args[0]
+    gspy.log(f"Input value: {input_scalar}", 3)  # DEBUG level
+    
     result = input_scalar * 10.0
+    gspy.log(f"Calculation complete, result: {result}", 2)  # INFO level
+    
     # The return value MUST be a tuple
     return (result,)
   except Exception:
+    gspy.log("Error in calculation: " + traceback.format_exc(), 0)  # ERROR level
     print(traceback.format_exc())
     return (0.0,)
 ```
@@ -137,12 +215,57 @@ def process_data(*args):
         * For a vector: "dimensions_from": ["vector_size_scalar"]
         * For a matrix: "dimensions_from": ["row_count_scalar", "col_count_scalar"]
       * **`max_points` / `max_elements`**: Required for dynamic **outputs** `"timeseries"` or `"table"` to pre-allocate memory (only required for outputs from python to GoldSim)
+  * **`log_level`** (Optional): Controls logging verbosity for performance optimization. Default is 2 (INFO).
+      * **`0`** = ERROR only (fastest, recommended for production)
+      * **`1`** = ERROR + WARNING
+      * **`2`** = ERROR + WARNING + INFO (default)
+      * **`3`** = ERROR + WARNING + INFO + DEBUG (slowest, development only)
+
+### Performance Optimization
+
+For production simulations, add `"log_level": 0` to your JSON configuration to minimize logging overhead:
+
+```json
+{
+  "python_path": "C:\\Python311",
+  "script_path": "my_script.py", 
+  "function_name": "process_data",
+  "log_level": 0,
+  "inputs": [...],
+  "outputs": [...]
+}
+```
+
+This eliminates ~90-95% of log writes, significantly improving simulation performance while preserving error reporting.
 
 ### Python Script API
 
   * Your function (e.g., `process_data`) must accept arguments using **`*args`**.
   * Inputs are passed in a tuple (`args`) in the order defined in the JSON.
   * Your function **must** return a **tuple** of results, even if there is only one (e.g., `return (my_result,)`). The order must match the JSON `outputs`.
+
+#### Python Logging
+
+Python scripts can write custom messages to the GSPy log file using the built-in `gspy` module:
+
+```python
+import gspy
+
+def process_data(*args):
+    # Write messages at different log levels
+    gspy.log("Starting calculation", 2)  # INFO level
+    gspy.log("Debug info: processing input", 3)  # DEBUG level  
+    gspy.log("Warning: unusual input value", 1)  # WARNING level
+    gspy.log("Critical error occurred", 0)  # ERROR level
+    
+    # Default level is INFO (2) if not specified
+    gspy.log("Simple message")
+    
+    # Your calculation logic here...
+    return (result,)
+```
+
+**Log Levels:** 0=ERROR, 1=WARNING, 2=INFO (default), 3=DEBUG
 
 #### Data Type Mapping
 

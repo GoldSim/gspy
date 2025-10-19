@@ -28,6 +28,62 @@ static PyObject* pModule = nullptr;
 static PyObject* pFunc = nullptr;
 
 // =================================================================
+// Python-Callable Logging Function
+// =================================================================
+
+// Python-callable logging function (static - internal use only)
+static PyObject* PythonLog(PyObject* self, PyObject* args) {
+    const char* message;
+    int level = 2; // Default to INFO level
+    
+    // Parse arguments: message (required), level (optional)
+    if (!PyArg_ParseTuple(args, "s|i", &message, &level)) {
+        return nullptr;
+    }
+    
+    // Call the appropriate logging function based on level
+    switch (level) {
+        case 0:
+            LogError(std::string(message));
+            break;
+        case 1:
+            LogWarning(std::string(message));
+            break;
+        case 2:
+            LogInfo(std::string(message));
+            break;
+        case 3:
+            LogDebug(std::string(message));
+            break;
+        default:
+            LogInfo(std::string(message)); // Default to INFO
+            break;
+    }
+    
+    Py_RETURN_NONE;
+}
+
+// Method definition for the gspy module
+static PyMethodDef GSPyMethods[] = {
+    {"log", PythonLog, METH_VARARGS, "Write a message to the GSPy log file"},
+    {nullptr, nullptr, 0, nullptr} // Sentinel
+};
+
+// Module definition
+static struct PyModuleDef gspymodule = {
+    PyModuleDef_HEAD_INIT,
+    "gspy",     // module name
+    nullptr,    // module documentation
+    -1,         // size of per-interpreter state, -1 if global
+    GSPyMethods
+};
+
+// Module initialization function
+PyObject* PyInit_gspy(void) {
+    return PyModule_Create(&gspymodule);
+}
+
+// =================================================================
 // ## Specialized Cohorts (Private Helper Functions) ##
 // =================================================================
 static std::string read_config() {
@@ -248,6 +304,13 @@ bool InitializePython(std::string& errorMessage) {
             errorMessage = "Error: 'python_path' key is missing from the config file.";
             Log(errorMessage);
             PyConfig_Clear(&py_config);
+            return false;
+        }
+
+        // Register the gspy module before initializing Python
+        if (PyImport_AppendInittab("gspy", PyInit_gspy) == -1) {
+            errorMessage = "Error: Failed to register gspy module with Python.";
+            LogError(errorMessage);
             return false;
         }
 

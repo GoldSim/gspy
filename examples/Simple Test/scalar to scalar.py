@@ -1,4 +1,5 @@
 import traceback
+import gspy
 
 def process_data(*args):
   """
@@ -8,6 +9,11 @@ def process_data(*args):
   try:
     # 1. Unpack the input scalar from the arguments tuple
     input_scalar = args[0]
+
+    # Check a condition and write a WARNING message to the log
+    if input_scalar < 0:
+        # Log Level 1 = WARNING
+        gspy.log(f"Input scalar is negative: {input_scalar}. Proceeding with calculation.", 1)
     
     # 2. Perform the calculation
     result_scalar = input_scalar * 2.0
