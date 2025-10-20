@@ -16,7 +16,6 @@ This project was designed to be simple, robust, and flexible, allowing modelers 
       * Time Series
       * Lookup Tables (only from Python to GoldSim)
   * **Data-Driven Configuration:** A JSON file defines the interface, allowing for configurations without changing code.
-  * **Dynamic Array Sizing:** Define the size of input vectors and matrices at runtime using scalar values from your GoldSim model.
   * **Error Handling:** Python exceptions are caught gracefully and reported directly to the GoldSim user, simplifying debugging.
   * **Diagnostic Logging:** Automatically generates a log file for each run, providing a clear trace of the DLL's operations.
 
