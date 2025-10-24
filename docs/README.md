@@ -466,7 +466,7 @@ Notes:
 
 Required Dictionary Structure: A lookup table must be returned as a Python dictionary with the following keys:
 
- -"table_dim": An integer, 1 for a 1D table or 2 for a 2D table.
+ - "table_dim": An integer, 1 for a 1D table or 2 for a 2D table.
  - "row_labels": A 1D NumPy array of monotonically increasing values for the row headers.
  - "col_labels": A 1D NumPy array of monotonically increasing values for the column headers. (This key should be omitted for a 1D table).
  - "data": A 1D or 2D NumPy array containing the table's body data. Its shape must match the labels.
