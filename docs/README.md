@@ -281,7 +281,7 @@ def process_data(*args):
 | Vector | 1D NumPy Array |
 | Matrix | 2D NumPy Array |
 | Time Series |  Python Dictionary with keys: `"timestamps"`, `"data"`, `"time_basis"`, `"data_type"` |
-| Lookup Table | Python Dictionary |
+| Lookup Table | Python Dictionary with keys: `"table_dim"`, `"row_labels"`, `"col_labels"`, `"data"` |
 
 -----
 ## Extended Examples
