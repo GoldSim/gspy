@@ -33,28 +33,28 @@ bool MarshalPythonLookupTableToGoldSim(PyObject* py_object, const nlohmann::json
     if (!numpy_initialized) {
         if (_import_array() < 0) {
             errorMessage = "Error: Could not initialize NumPy C-API in LookupTableManager.";
-            Log(errorMessage); PyErr_Print(); return false;
+            LogError(errorMessage); PyErr_Print(); return false;
         }
         numpy_initialized = true;
     }
 
     if (!PyDict_Check(py_object)) {
         errorMessage = "Error: Python script was expected to return a dictionary for a Lookup Table output.";
-        Log(errorMessage); return false;
+        LogError(errorMessage); return false;
     }
 
     // Extract table dimension
     PyObject* py_dim = PyDict_GetItemString(py_object, "table_dim");
     if (!py_dim) {
         errorMessage = "Error: Python dictionary for Table is missing required key 'table_dim'.";
-        Log(errorMessage); return false;
+        LogError(errorMessage); return false;
     }
     long table_dim = PyLong_AsLong(py_dim);
 
     // Use a switch to handle 1D, 2D, or 3D cases
     switch (table_dim) {
     case 1: {
-        Log("  Marshalling 1D Lookup Table.");
+        LogDebug("  Marshalling 1D Lookup Table.");
         PyArrayObject* row_labels = get_numpy_array(py_object, "row_labels", errorMessage);
         PyArrayObject* data = get_numpy_array(py_object, "data", errorMessage);
         if (!row_labels || !data) { if (row_labels) Py_DECREF(row_labels); if (data) Py_DECREF(data); return false; }
@@ -74,7 +74,7 @@ bool MarshalPythonLookupTableToGoldSim(PyObject* py_object, const nlohmann::json
         break;
     }
     case 2: {
-        Log("  Marshalling 2D Lookup Table.");
+        LogDebug("  Marshalling 2D Lookup Table.");
         PyArrayObject* row_labels = get_numpy_array(py_object, "row_labels", errorMessage);
         PyArrayObject* col_labels = get_numpy_array(py_object, "col_labels", errorMessage);
         PyArrayObject* data = get_numpy_array(py_object, "data", errorMessage);
@@ -101,7 +101,7 @@ bool MarshalPythonLookupTableToGoldSim(PyObject* py_object, const nlohmann::json
         break;
     }
     case 3: {
-        Log("  Marshalling 3D Lookup Table.");
+        LogDebug("  Marshalling 3D Lookup Table.");
         PyArrayObject* row_labels = get_numpy_array(py_object, "row_labels", errorMessage);
         PyArrayObject* col_labels = get_numpy_array(py_object, "col_labels", errorMessage);
         PyArrayObject* layer_labels = get_numpy_array(py_object, "layer_labels", errorMessage);
@@ -135,7 +135,7 @@ bool MarshalPythonLookupTableToGoldSim(PyObject* py_object, const nlohmann::json
     }
     default:
         errorMessage = "Error: Invalid 'table_dim' provided. Must be 1, 2, or 3.";
-        Log(errorMessage);
+        LogError(errorMessage);
         return false;
     }
 

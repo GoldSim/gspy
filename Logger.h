@@ -1,5 +1,7 @@
 #pragma once
 #include <string>
+#include <atomic>
+#include <mutex>
 
 // Define logging levels
 enum LogLevel {
@@ -12,8 +14,26 @@ enum LogLevel {
 // Set the current logging level (default is LOG_INFO for production)
 extern LogLevel current_log_level;
 
+// Atomic log level for thread-safe access
+extern std::atomic<int> current_log_level_atomic;
+
+// Mutex for thread-safe file operations
+extern std::mutex log_mutex;
+
+// Flag to indicate if we're using stderr fallback
+extern bool fallback_to_stderr;
+
+// Set log level from integer with validation
+void SetLogLevelFromInt(int level);
+
+// Fast-path filtering function for performance optimization
+inline bool ShouldLog(LogLevel level);
+
 // Prepares the log file for writing (clears any old content)
 void InitLogger(const std::string& filename, LogLevel level = LOG_INFO);
+
+// Writes the intro header to the log file
+void WriteLogHeader();
 
 // Writes a message to the log file with specified level
 void Log(const std::string& message, LogLevel level = LOG_INFO);

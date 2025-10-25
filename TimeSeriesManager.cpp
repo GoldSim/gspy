@@ -20,7 +20,7 @@ PyObject* MarshalGoldSimTimeSeriesToPython(double*& current_inarg_pointer, const
     static bool numpy_initialized = false;
     if (!numpy_initialized) {
         if (_import_array() < 0) {
-            Log("Error: Could not initialize NumPy C-API in TimeSeriesManager.");
+            LogError("Error: Could not initialize NumPy C-API in TimeSeriesManager.");
             PyErr_Print();
             // We can't send an error here easily, so we'll return None and let the Python call fail.
             Py_INCREF(Py_None);
@@ -32,28 +32,28 @@ PyObject* MarshalGoldSimTimeSeriesToPython(double*& current_inarg_pointer, const
 
     // We will now log every piece of metadata we read from the data stream.
     double ts_id = *current_inarg_pointer++;
-    Log("  TS Metadata: ts_id = " + std::to_string(ts_id));
+    LogDebug("  TS Metadata: ts_id = " + std::to_string(ts_id));
 
     double format_version = *current_inarg_pointer++;
-    Log("  TS Metadata: format_version = " + std::to_string(format_version));
+    LogDebug("  TS Metadata: format_version = " + std::to_string(format_version));
 
     double time_basis = *current_inarg_pointer++;
-    Log("  TS Metadata: time_basis = " + std::to_string(time_basis));
+    LogDebug("  TS Metadata: time_basis = " + std::to_string(time_basis));
 
     double data_type = *current_inarg_pointer++;
-    Log("  TS Metadata: data_type = " + std::to_string(data_type));
+    LogDebug("  TS Metadata: data_type = " + std::to_string(data_type));
 
     long num_rows = static_cast<long>(*current_inarg_pointer++);
-    Log("  TS Metadata: num_rows = " + std::to_string(num_rows));
+    LogDebug("  TS Metadata: num_rows = " + std::to_string(num_rows));
 
     long num_cols = static_cast<long>(*current_inarg_pointer++);
-    Log("  TS Metadata: num_cols = " + std::to_string(num_cols));
+    LogDebug("  TS Metadata: num_cols = " + std::to_string(num_cols));
 
     long num_series = static_cast<long>(*current_inarg_pointer++);
-    Log("  TS Metadata: num_series = " + std::to_string(num_series));
+    LogDebug("  TS Metadata: num_series = " + std::to_string(num_series));
 
     long num_time_points = static_cast<long>(*current_inarg_pointer++);
-    Log("  TS Metadata: num_time_points = " + std::to_string(num_time_points));
+    LogDebug("  TS Metadata: num_time_points = " + std::to_string(num_time_points));
 
     // Create a NumPy array for the timestamps by wrapping the data pointer (no copy)
     npy_intp time_dims[] = { num_time_points };
@@ -87,7 +87,7 @@ PyObject* MarshalGoldSimTimeSeriesToPython(double*& current_inarg_pointer, const
     PyDict_SetItemString(py_dict, "timestamps", py_timestamps);
     PyDict_SetItemString(py_dict, "data", py_data);
 
-    Log("  TS Marshalling: Successfully created Python dictionary.");
+    LogDebug("  TS Marshalling: Successfully created Python dictionary.");
     return py_dict;
 }
 

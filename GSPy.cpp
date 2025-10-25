@@ -13,6 +13,7 @@ extern "C" void GSPy(int methodID, int* status, double* inargs, double* outargs)
         std::string log_filename = GetLogFilename();
         int log_level = GetLogLevel(); // Get from config file
         InitLogger(log_filename, static_cast<LogLevel>(log_level));
+        SetLogLevelFromInt(log_level); // Apply log level atomically
         logger_initialized = true;
     }
 
@@ -37,7 +38,8 @@ extern "C" void GSPy(int methodID, int* status, double* inargs, double* outargs)
         break;
 
     case 2: // Report Version
-        outargs[0] = 1.6;
+        LogInfo("Reporting version to GoldSim: " + std::string(GSPY_VERSION));
+        outargs[0] = GSPY_VERSION_DOUBLE;
         break;
 
     case 3: // Report Arguments

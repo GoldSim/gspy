@@ -88,25 +88,25 @@ PyObject* PyInit_gspy(void) {
 // =================================================================
 static std::string read_config() {
     std::string config_path = GetConfigFilename();
-    Log("Reading config file: " + config_path);
+    LogDebug("Reading config file: " + config_path);
     std::ifstream f(config_path);
     if (f.is_open()) {
-        Log("Config file opened successfully.");
+        LogDebug("Config file opened successfully.");
         std::string file_contents((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
         f.clear();
         f.seekg(0, std::ios::beg); // Reset file pointer for parsing
         try {
             config = json::parse(file_contents);
-            Log("Config file parsed successfully.");
+            LogDebug("Config file parsed successfully.");
             return ""; // Success
         }
         catch (json::parse_error& e) {
-            Log("JSON parse error: " + std::string(e.what()));
+            LogError("JSON parse error: " + std::string(e.what()));
             return "JSON parse error: " + std::string(e.what()); // Failure
         }
     }
     else {
-        Log("Error: Could not open config.json at path: " + config_path);
+        LogError("Error: Could not open config.json at path: " + config_path);
         return "Error: Could not open config.json"; // Failure
     }
 }
@@ -123,26 +123,26 @@ static int calculate_total_elements(const json& dimensions) {
 
 // --- Initializes the NumPy C-API ---
 static bool initialize_numpy(std::string& errorMessage) {
-    Log("Initializing NumPy C-API...");
+    LogDebug("Initializing NumPy C-API...");
     if (_import_array() < 0) {
         errorMessage = "Error: Could not initialize NumPy C-API.";
-        Log(errorMessage);
+        LogError(errorMessage);
         PyErr_Print();
         return false;
     }
-    Log("NumPy C-API initialized successfully.");
+    LogDebug("NumPy C-API initialized successfully.");
     return true;
 }
 
 // --- Adds the current directory to Python's search path ---
 static bool add_script_path_to_sys() {
-    Log("Adding current directory to Python sys.path...");
+    LogDebug("Adding current directory to Python sys.path...");
     PyObject* sys = PyImport_ImportModule("sys");
     PyObject* path = PyObject_GetAttrString(sys, "path");
     PyList_Append(path, PyUnicode_FromString("."));
     Py_DECREF(path);
     Py_DECREF(sys);
-    Log("Current directory added to path.");
+    LogDebug("Current directory added to path.");
     return true;
 }
 
@@ -150,8 +150,8 @@ static bool add_script_path_to_sys() {
 static bool load_script_and_function(std::string& errorMessage) {
     std::string script_path_full = config["script_path"];
     std::string function_name = config["function_name"];
-    Log("Script path from config: " + script_path_full);
-    Log("Function name from config: " + function_name);
+    LogDebug("Script path from config: " + script_path_full);
+    LogDebug("Function name from config: " + function_name);
 
     std::string script_path_module = script_path_full;
     size_t dot_pos = script_path_module.find(".py");
@@ -159,35 +159,35 @@ static bool load_script_and_function(std::string& errorMessage) {
         script_path_module = script_path_module.substr(0, dot_pos);
     }
 
-    Log("Attempting to import Python module: " + script_path_module);
+    LogDebug("Attempting to import Python module: " + script_path_module);
     pModule = PyImport_ImportModule(script_path_module.c_str());
 
     if (pModule != nullptr) {
-        Log("Module imported successfully.");
-        Log("Attempting to get function '" + function_name + "' from module...");
+        LogDebug("Module imported successfully.");
+        LogDebug("Attempting to get function '" + function_name + "' from module...");
         pFunc = PyObject_GetAttrString(pModule, function_name.c_str());
 
         if (pFunc && PyCallable_Check(pFunc)) {
-            Log("Function found successfully.");
+            LogDebug("Function found successfully.");
             return true;
         }
         else {
             errorMessage = "Error: Cannot find function '" + function_name + "' in script '" + script_path_full + "'.";
-            Log(errorMessage);
+            LogError(errorMessage);
             return false;
         }
     }
     else {
         PyErr_Print();
         errorMessage = "Error: Failed to load Python script '" + script_path_full + "'. Check for syntax errors or missing dependencies in the script.";
-        Log(errorMessage);
+        LogError(errorMessage);
         return false;
     }
 }
 
 // This function prepares the tuple of arguments to be sent to Python.
 static PyObject* MarshalInputsToPython(const json& inputs_config, double* inargs) {
-    Log("Preparing " + std::to_string(inputs_config.size()) + " input argument(s) for Python.");
+    LogDebug("Preparing " + std::to_string(inputs_config.size()) + " input argument(s) for Python.");
     PyObject* pArgs = PyTuple_New(inputs_config.size());
     double* current_inarg_pointer = inargs; // Use a pointer we can advance
 
@@ -196,7 +196,7 @@ static PyObject* MarshalInputsToPython(const json& inputs_config, double* inargs
         std::string type = input["type"];
         PyObject* pValue = nullptr;
 
-        Log("  Input #" + std::to_string(i) + ": Type='" + type + "'");
+        LogDebug("  Input #" + std::to_string(i) + ": Type='" + type + "'");
 
         if (type == "timeseries") {
             // Delegate to our specialist
@@ -226,18 +226,18 @@ static bool MarshalOutputsToCpp(PyObject* pResultTuple, const json& outputs_conf
     if (!pResultTuple || !PyTuple_Check(pResultTuple)) {
         PyErr_Print();
         errorMessage = "Error: Python call failed or did not return a tuple.";
-        Log(errorMessage);
+        LogError(errorMessage);
         return false;
     }
 
-    Log("Python call successful. Processing " + std::to_string(PyTuple_Size(pResultTuple)) + " result(s).");
+    LogDebug("Python call successful. Processing " + std::to_string(PyTuple_Size(pResultTuple)) + " result(s).");
     double* current_outarg_pointer = outargs;
 
     for (Py_ssize_t i = 0; i < PyTuple_Size(pResultTuple); ++i) {
         PyObject* pItem = PyTuple_GetItem(pResultTuple, i);
         const auto& output_config = outputs_config[i];
         std::string type = output_config["type"];
-        Log("  Output #" + std::to_string(i) + ": Type='" + type + "'");
+        LogDebug("  Output #" + std::to_string(i) + ": Type='" + type + "'");
 
         if (type == "timeseries") {
             if (!MarshalPythonTimeSeriesToGoldSim(pItem, output_config, current_outarg_pointer, errorMessage)) {
@@ -276,14 +276,14 @@ bool InitializePython(std::string& errorMessage) {
     if (config.empty()) {
         errorMessage = read_config();
         if (!errorMessage.empty()) {
-            Log("Error reading config: " + errorMessage);
+            LogError("Error reading config: " + errorMessage);
             return false;
         }
-        Log("Config read successfully.");
+        LogInfo("Config read successfully.");
     }
 
     if (!Py_IsInitialized()) {
-        Log("Python interpreter is not initialized. Initializing now...");
+        LogInfo("Python interpreter is not initialized. Initializing now...");
 
         PyConfig py_config;
         PyConfig_InitPythonConfig(&py_config);
@@ -291,18 +291,18 @@ bool InitializePython(std::string& errorMessage) {
         // --- REVERTED LOGIC: Get Python Home from the config file ---
         if (config.contains("python_path")) {
             std::string python_home = config["python_path"];
-            Log("Using python_path from config: " + python_home);
+            LogDebug("Using python_path from config: " + python_home);
             PyStatus status = PyConfig_SetBytesString(&py_config, &py_config.home, python_home.c_str());
             if (PyStatus_Exception(status)) {
                 errorMessage = "Error: Failed to set Python Home from config path.";
-                Log(errorMessage);
+                LogError(errorMessage);
                 PyConfig_Clear(&py_config);
                 return false;
             }
         }
         else {
             errorMessage = "Error: 'python_path' key is missing from the config file.";
-            Log(errorMessage);
+            LogError(errorMessage);
             PyConfig_Clear(&py_config);
             return false;
         }
@@ -318,7 +318,7 @@ bool InitializePython(std::string& errorMessage) {
         PyConfig_Clear(&py_config);
         if (PyStatus_Exception(status)) {
             errorMessage = "Error: Py_InitializeFromConfig failed.";
-            Log(errorMessage);
+            LogError(errorMessage);
             return false;
         }
 
@@ -327,7 +327,7 @@ bool InitializePython(std::string& errorMessage) {
         if (!load_script_and_function(errorMessage)) return false;
     }
     else {
-        Log("Python interpreter is already initialized.");
+        LogInfo("Python interpreter is already initialized.");
     }
 
     Log("--- Python Manager initialization successful ---");
@@ -336,19 +336,19 @@ bool InitializePython(std::string& errorMessage) {
 
 void FinalizePython() {
     // LOGGING: Announce the start of the cleanup process.
-    Log("--- Finalizing Python Manager ---");
+    LogInfo("--- Finalizing Python Manager ---");
 
     Py_XDECREF(pFunc);
     Py_XDECREF(pModule);
 
     if (Py_IsInitialized()) {
         // LOGGING: Confirm that we are shutting down the interpreter.
-        Log("Shutting down Python interpreter.");
+        LogInfo("Shutting down Python interpreter.");
         Py_Finalize();
     }
     else {
         // LOGGING: Note if no shutdown was necessary.
-        Log("Python interpreter was not initialized. No cleanup needed.");
+        LogInfo("Python interpreter was not initialized. No cleanup needed.");
     }
 }
 
@@ -359,13 +359,13 @@ int GetNumberOfInputs() {
     for (const auto& input : config["inputs"]) {
         // If any input is a dynamic type, we must return -1.
         if (input["type"] == "timeseries") {
-            Log("GetNumberOfInputs detected a dynamic time series. Returning -1.");
+            LogDebug("GetNumberOfInputs detected a dynamic time series. Returning -1.");
             return -1;
         }
         total_inputs += calculate_total_elements(input["dimensions"]);
     }
 
-    Log("GetNumberOfInputs calculated a total of: " + std::to_string(total_inputs));
+    LogDebug("GetNumberOfInputs calculated a total of: " + std::to_string(total_inputs));
     return total_inputs;
 }
 
@@ -400,16 +400,16 @@ int GetNumberOfOutputs() {
         }
     }
 
-    Log("GetNumberOfOutputs calculated a total of: " + std::to_string(total_outputs));
+    LogDebug("GetNumberOfOutputs calculated a total of: " + std::to_string(total_outputs));
     return total_outputs;
 }
 
 // --- The ExecuteCalculation function is now a clean, high-level commander ---
 void ExecuteCalculation(double* inargs, double* outargs, std::string& errorMessage) {
-    Log("--- Executing Calculation Cycle ---");
+    LogInfo("--- Executing Calculation Cycle ---");
     if (!pFunc) {
         errorMessage = "Error: Python function not loaded.";
-        Log(errorMessage);
+        LogError(errorMessage);
         return;
     }
 
@@ -417,12 +417,12 @@ void ExecuteCalculation(double* inargs, double* outargs, std::string& errorMessa
     PyObject* pArgs = MarshalInputsToPython(config["inputs"], inargs);
     if (!pArgs) {
         errorMessage = "Error: Failed to marshal inputs for Python.";
-        Log(errorMessage);
+        LogError(errorMessage);
         return;
     }
 
     // 2. Call the Python function
-    Log("Calling Python function...");
+    LogDebug("Calling Python function...");
     PyObject* pResultTuple = PyObject_CallObject(pFunc, pArgs);
     Py_DECREF(pArgs);
 
@@ -432,5 +432,5 @@ void ExecuteCalculation(double* inargs, double* outargs, std::string& errorMessa
         return;
     }
 
-    Log("--- Calculation Cycle Complete ---");
+    LogInfo("--- Calculation Cycle Complete ---");
 }

@@ -216,9 +216,9 @@ GSPy/
 ## Release Process
 
 1. **Version Updates**:
-   - Update version in GSPy.cpp (case 2: Report Version)
-   - Update version in resource files
-   - Update CHANGELOG.md
+   - Update only 3 constants in `GSPy.h`: `GSPY_VERSION_MAJOR`, `GSPY_VERSION_MINOR`, `GSPY_VERSION_PATCH`
+   - All version strings, log headers, and GoldSim reporting update automatically
+   - Update CHANGELOG.md with new version and changes
    - Tag releases appropriately
 
 2. **Quality Assurance**:
