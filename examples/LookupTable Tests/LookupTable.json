@@ -2,6 +2,7 @@
   "python_path": "C:\\Users\\JasonLillywhite\\AppData\\Local\\Programs\\Python\\Python313",
   "script_path": "lookup_table_script.py",
   "function_name": "process_data",
+  "log_level": 3,
   "inputs": [
     {
       "name": "input_scalar",
