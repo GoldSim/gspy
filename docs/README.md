@@ -49,7 +49,7 @@ To use the pre-compiled GSPy DLLs (v1.8.0+), you will need:
 2.  A **64-bit** installation of **Python 3.11** OR **Python 3.14**.
     * GSPy v1.8.0+ specifically requires one of these two versions due to changes in the Python C-API and the way the DLLs are compiled. Ensure you have the correct 64-bit installer from [python.org](https://www.python.org/).
     * You must install the Python version matching the GSPy DLL you intend to use (e.g., `GSPy_Release_py311.dll` requires Python 3.11).
-3.  3.  The **NumPy** and **SciPy** Python packages installed *for the specific Python version you are using*.
+3.  The **NumPy** and **SciPy** Python packages installed *for the specific Python version you are using*.
     * **NumPy** is required for basic GSPy operation (handling arrays).
     * **SciPy** is required for advanced numerical methods like implicit equation solving (used in some examples like the Hazen-Williams solver) and other scientific computing tasks. It is recommended for broader GSPy usage.
     * After installing Python, open a command prompt and run the appropriate command:
