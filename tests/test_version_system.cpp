@@ -1,4 +1,4 @@
-#include "GSPy.h"
+#include "../GSPy.h"
 #include <iostream>
 #include <iomanip>
 
@@ -19,8 +19,8 @@ int main() {
               << GSPY_VERSION_DOUBLE << std::endl;
     
     // Test that they match expected values
-    std::string expected_string = "1.7.1";
-    double expected_double = 1.71;
+    std::string expected_string = "1.8.0";
+    double expected_double = 1.80;
     
     if (std::string(GSPY_VERSION) == expected_string) {
         std::cout << "✓ String version matches expected: " << expected_string << std::endl;

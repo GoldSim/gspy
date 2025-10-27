@@ -2,6 +2,48 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.0] - 2025-10-26
+### Added
+* **Multi-Python Build System:** Implemented flexible build system supporting multiple Python versions (3.11 and 3.14) through Visual Studio Property Sheets.
+  * Created `python_311.props` and `python_314.props` Property Sheets for version-specific configuration
+  * Environment variable-based configuration using `PYTHON_3_11_HOME` and `PYTHON_3_14_HOME`
+  * Allow for switching between Python versions through Visual Studio Property Manager
+  * Clean project file with no hard-coded Python paths for improved maintainability
+* **Developer Documentation:** Added developer documentation section to README.md including:
+  * Step-by-step environment variable setup guide
+  * Python version switching workflows using Property Manager
+  * Troubleshooting guide for common build and environment issues
+  * Team onboarding instructions for new developers
+  * Examples of typical development workflows for single and multi-version development
+* **Enhanced Logging System:** Implemented high-performance, configurable logging with atomic-level optimization:
+  * Added `log_level` configuration option in JSON files (0=ERROR, 1=WARNING, 2=INFO, 3=DEBUG)
+  * Atomic log level filtering with fast-path optimization for production use
+  * Thread-safe logging operations with mutex protection
+  * Hybrid flush policy: immediate flush for errors/warnings, write-only for info/debug
+  * Enhanced Python logging bridge with `gspy.log(message, level)` function
+  * Automatic stderr fallback if file operations fail
+  * Reentrancy protection for Python logging calls
+
+### Changed
+* **Build System Architecture:** Removed all hard-coded Python paths from GSPy.vcxproj file
+  * Eliminated hard-coded Python include directories from all x64 configurations
+  * Removed hard-coded Python library directories and dependencies
+  * Preserved all existing compiler settings and project structure
+* **Configuration Management:** Build system now uses Property Sheets for Python version management
+  * Property Sheets provide complete Python environment setup per version
+  * Support for both Debug and Release x64 configurations
+  * Build fails cleanly when no Property Sheet is applied, providing clear error guidance
+* **Logging Performance:** Optimized logging system for production use
+  * Fast-path filtering eliminates ~90-95% of logging overhead when disabled
+  * Reclassified verbose messages from INFO to DEBUG level
+  * Atomic operations for thread-safe level checking without locks
+
+### Technical Details
+* Enhanced project maintainability by separating Python-specific configuration from core project settings
+* Improved team collaboration with portable, environment variable-based configuration
+* Reduced build system complexity and eliminated version-specific path maintenance
+* Added support for future Python versions through template-based Property Sheet approach
+
 ## [1.7.1] - 2025-10-19
 ### Added
 * **Configurable Log Levels:** Added `log_level` configuration option to JSON files for performance optimization.

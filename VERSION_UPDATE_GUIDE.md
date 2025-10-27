@@ -6,8 +6,8 @@ To update GSPy to a new version, you only need to modify **three constants** in 
 
 ```cpp
 #define GSPY_VERSION_MAJOR 1
-#define GSPY_VERSION_MINOR 7  
-#define GSPY_VERSION_PATCH 1
+#define GSPY_VERSION_MINOR 8  
+#define GSPY_VERSION_PATCH 0
 ```
 
 ### Examples:
@@ -38,7 +38,7 @@ To update GSPy to a new version, you only need to modify **three constants** in 
 When you change these three constants, the following are automatically generated:
 
 1. **String Version** (`GSPY_VERSION`): Used in log headers and display
-   - Example: "1.7.1"
+   - Example: "1.8.0"
 
 2. **Double Version** (`GSPY_VERSION_DOUBLE`): Used for GoldSim API compliance
    - Example: 1.71 (calculated as 1 + 7*0.1 + 1*0.01)
@@ -52,7 +52,7 @@ When you change these three constants, the following are automatically generated
 The version system is designed to comply with GoldSim's External DLL interface:
 
 - **methodID 2** (Report Version) returns a double value
-- Version format: `MAJOR.MINOR_PATCH` (e.g., 1.71 for version 1.7.1)
+- Version format: `MAJOR.MINOR_PATCH` (e.g., 1.80 for version 1.8.0)
 - This matches GoldSim's expectation for version reporting
 
 ## Testing Version Updates
@@ -62,7 +62,10 @@ After updating the version constants:
 1. **Compile the project** to ensure no syntax errors
 2. **Run version tests**:
    ```
+   cd tests
+   cl test_version_system.cpp /I.. /Fe:test_version_system.exe
    test_version_system.exe
+   cl test_version_reporting.cpp /I.. /Fe:test_version_reporting.exe  
    test_version_reporting.exe
    ```
 3. **Check log file header** by running any GSPy operation

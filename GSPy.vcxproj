@@ -70,20 +70,38 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  
+  <!-- Conditional Python property sheet imports and output naming -->
+  <PropertyGroup>
+    <PythonPropsFile Condition="'$(PYTHON_VERSION)'=='311'">python_311.props</PythonPropsFile>
+    <PythonPropsFile Condition="'$(PYTHON_VERSION)'=='314'">python_314.props</PythonPropsFile>
+    <PythonPropsFile Condition="'$(PythonPropsFile)'==''">python_314.props</PythonPropsFile>
+  </PropertyGroup>
+  
+  <Import Project="$(PythonPropsFile)" Condition="Exists('$(PythonPropsFile)')" />
+  
+  <!-- Set versioned output filename -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <TargetName Condition="'$(PYTHON_VERSION)'=='311'">GSPy_Release_311</TargetName>
+    <TargetName Condition="'$(PYTHON_VERSION)'=='314'">GSPy_Release_314</TargetName>
+    <TargetName Condition="'$(TargetName)'==''">GSPy_Release_314</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetName Condition="'$(PYTHON_VERSION)'=='311'">GSPy_Debug_311</TargetName>
+    <TargetName Condition="'$(PYTHON_VERSION)'=='314'">GSPy_Debug_314</TargetName>
+    <TargetName Condition="'$(TargetName)'==''">GSPy_Debug_314</TargetName>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);GSPY_EXPORTS;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(PYTHON_HOME)\include;$(PYTHON_HOME)\Lib\site-packages\numpy\_core\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>GSPy.def</ModuleDefinitionFile>
-      <AdditionalLibraryDirectories>$(PYTHON_HOME)\libs</AdditionalLibraryDirectories>
-      <AdditionalDependencies>python313.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -94,13 +112,11 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);GSPY_EXPORTS;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(PYTHON_HOME)\include;$(PYTHON_HOME)\Lib\site-packages\numpy\_core\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>GSPy.def</ModuleDefinitionFile>
-      <AdditionalLibraryDirectories>$(PYTHON_HOME)\libs</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -109,15 +125,11 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);GSPY_EXPORTS;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\JasonLillywhite\AppData\Local\Programs\Python\Python313\include;C:\Users\JasonLillywhite\AppData\Local\Programs\Python\Python313\Lib\site-packages\numpy\_core\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>GSPy.def</ModuleDefinitionFile>
-      <AdditionalLibraryDirectories>C:\Users\JasonLillywhite\AppData\Local\Programs\Python\Python313\libs</AdditionalLibraryDirectories>
-      <AdditionalDependencies>python313.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <IgnoreSpecificDefaultLibraries>python313_d.lib; python313_d.lib</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -126,17 +138,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);GSPY_EXPORTS;GSPY_EXPORTS;GSPY_EXPORTS; GSPY_EXPORTS;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);GSPY_EXPORTS;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\JasonLillywhite\AppData\Local\Programs\Python\Python313\include;C:\Users\JasonLillywhite\AppData\Local\Programs\Python\Python313\Lib\site-packages\numpy\_core\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>GSPy.def</ModuleDefinitionFile>
-      <AdditionalLibraryDirectories>C:\Users\JasonLillywhite\AppData\Local\Programs\Python\Python313\libs</AdditionalLibraryDirectories>
-      <AdditionalDependencies>python313.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <IgnoreSpecificDefaultLibraries>; python313_d.lib</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

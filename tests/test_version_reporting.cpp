@@ -1,4 +1,4 @@
-#include "GSPy.h"
+#include "../GSPy.h"
 #include <iostream>
 #include <filesystem>
 

@@ -1,6 +1,6 @@
 # GSPy: The GoldSim-Python Bridge
 
-**Current Version: 1.7.1** | [Changelog](CHANGELOG.md)
+**Current Version: 1.8.0** | [Changelog](CHANGELOG.md)
 
 GSPy is a C++ bridge that allows GoldSim models to call external Python scripts. It acts as a shim DLL for GoldSim's `External` element, enabling users to leverage the capabilities of the Python ecosystem directly within their dynamic simulations.
 
@@ -43,84 +43,100 @@ The JSON points to the Python Script: The "script_path" field inside the JSON fi
 
 ## Prerequisites
 
-To use the pre-compiled GSPy DLL, you will need:
+To use the pre-compiled GSPy DLLs (v1.8.0+), you will need:
 
-1.  **GoldSim 14+** (The provided DLL is 64-bit).
-2.  A 64-bit installation of **Python** (version 3.8 or newer is recommended).
-3.  The **NumPy** Python package. It can be installed by opening a command prompt and running:
-    ```
-    pip install numpy
-    ```
+1.  **GoldSim 15+** (The provided DLLs are 64-bit).
+2.  A **64-bit** installation of **Python 3.11** OR **Python 3.14**.
+    * GSPy v1.8.0+ specifically requires one of these two versions due to changes in the Python C-API and the way the DLLs are compiled. Ensure you have the correct 64-bit installer from [python.org](https://www.python.org/).
+    * You must install the Python version matching the GSPy DLL you intend to use (e.g., `GSPy_Release_py311.dll` requires Python 3.11).
+3.  3.  The **NumPy** and **SciPy** Python packages installed *for the specific Python version you are using*.
+    * **NumPy** is required for basic GSPy operation (handling arrays).
+    * **SciPy** is required for advanced numerical methods like implicit equation solving (used in some examples like the Hazen-Williams solver) and other scientific computing tasks. It is recommended for broader GSPy usage.
+    * After installing Python, open a command prompt and run the appropriate command:
+        * For Python 3.11: `py -3.11 -m pip install numpy scipy`
+        * For Python 3.14: `py -3.14 -m pip install numpy scipy`
+4.  **Python Directory Added to System PATH:**
+    * The installation directory of your chosen Python version (e.g., `C:\...\Python311`) **must** be added to your Windows system `PATH` environment variable.
+    * **Reason:** This is required so that Windows can find the necessary Python runtime DLL (e.g., `python311.dll`) when GoldSim initially tries to load the `GSPy_*.dll`. See "Method 2" below for instructions.
+5.  **JSON `python_path` Configured:**
+    * You must configure the `python_path` setting inside the `GSPy_*.json` configuration file to point to the *exact* installation directory of the required Python version.
+    * **Reason:** This path is used by the GSPy C++ code at runtime to initialize the correct embedded Python interpreter. See "Method 1" below for instructions.
 
 -----
 
 ## Python Setup & Troubleshooting
 
-### Common Python Path Issues
+Correctly configuring Python paths is essential for GSPy to function. There are two critical path settings: the **System PATH** (for Windows to load the DLL) and the **JSON `python_path`** (for GSPy to initialize Python).
 
-The most frequent issue users encounter is GSPy not finding Python. Here are the solutions:
+### **Requirement 1: Add Python to System PATH**
 
-#### **Method 1: Use Full Python Path (Recommended)**
-In your JSON configuration, specify the complete path to your Python installation:
+This allows Windows to find the core Python DLL (e.g., `python311.dll`) needed by `GSPy_*.dll` when GoldSim starts. **This is mandatory.**
 
-```json
-{
-  "python_path": "C:\\Users\\YourUsername\\AppData\\Local\\Programs\\Python\\Python312",
-  "script_path": "your_script.py",
-  ...
-}
-```
+1.  **Find Python Path:** Locate your Python 3.11 or 3.14 installation directory (e.g., `C:\Users\YourUsername\AppData\Local\Programs\Python\Python311`).
+2.  **Edit System Environment Variables:** Search for "Environment Variables" in the Windows Start Menu and click "Edit the system environment variables".
+3.  Click **"Environment Variables..."**.
+4.  Under **"System variables"**, find and select **"Path"**, then click **"Edit..."**.
+5.  Click **"New"** and add your Python installation directory (e.g., `C:\Users\YourUsername\AppData\Local\Programs\Python\Python311`).
+6.  *(Optional but Recommended)* Click **"New"** again and add the corresponding `Scripts` directory (e.g., `C:\Users\YourUsername\AppData\Local\Programs\Python\Python311\Scripts`).
+7.  Click **"OK"** on all dialogs.
+8.  **Restart GoldSim or your computer** for the changes to take effect.
 
-**How to find your Python path:**
-1. Open Command Prompt (Windows Key + R, type `cmd`)
-2. Type: `where python`
-3. Use the directory path (remove `\\python.exe` from the end)
+### **Requirement 2: Configure `python_path` in JSON**
 
-#### **Method 2: Add Python to System PATH**
-If you want to use a shorter path in your JSON config:
+This tells the GSPy C++ code which specific Python interpreter to initialize and use for running your script. **This is mandatory.**
 
-1. **Windows 11/10**: Search for "Environment Variables" in Start Menu
-2. Click **"Edit the system environment variables"**
-3. Click **"Environment Variables..."** button
-4. Under **"System variables"**, find and select **"Path"**, then click **"Edit..."**
-5. Click **"New"** and add your Python installation directory (e.g., `C:\Users\YourUsername\AppData\Local\Programs\Python\Python312`)
-6. Click **"New"** again and add the Scripts directory (e.g., `C:\Users\YourUsername\AppData\Local\Programs\Python\Python312\Scripts`)
-7. Click **"OK"** on all dialogs
-8. **Restart your computer** for changes to take effect
+1.  **Open** the `GSPy_*.json` file corresponding to the DLL you are using (e.g., `GSPy_PY311.json`).
+2.  **Edit** the `python_path` value. It must be the full, absolute path to the root directory of the matching Python installation. Use double backslashes (`\\`).
 
-After adding to PATH, you can use shorter paths in your JSON:
-```json
-{
-  "python_path": "C:\\Python312",
-  ...
-}
-```
+    ```json
+    {
+      "python_path": "C:\\Users\\YourUsername\\AppData\\Local\\Programs\\Python\\Python311",
+      "script_path": "your_script.py",
+      "function_name": "process_data",
+      "log_level": 3,
+      "inputs": [...],
+      "outputs": [...]
+    }
+    ```
+3.  **Save** the JSON file.
 
 ### Verifying Your Python Setup
 
-Before using GSPy, verify your Python installation:
+Before using GSPy, verify your installations:
 
-1. **Open Command Prompt**
-2. **Test Python**: Type `python --version` - should show Python 3.8+
-3. **Test NumPy**: Type `python -c "import numpy; print('NumPy OK')"` - should print "NumPy OK"
+1.  **Open a NEW Command Prompt** (after setting PATH and restarting if necessary).
+2.  **Verify PATH:** Type `where python`. You should see the path to your desired Python version (3.11 or 3.14) listed.
+3.  **Test Correct Python Version:**
+    * If using 3.11: `py -3.11 --version` (Should show 3.11.x)
+    * If using 3.14: `py -3.14 --version` (Should show 3.14.x)
+4.  **Test NumPy/SciPy Installation:**
+    * If using 3.11: `py -3.11 -c "import numpy, scipy; print('NumPy & SciPy for 3.11 OK')"`
+    * If using 3.14: `py -3.14 -c "import numpy, scipy; print('NumPy & SciPy for 3.14 OK')"`
 
-If either command fails, you need to fix your Python installation before using GSPy.
+If any command fails, review the installation steps and path settings.
 
 ### Installation Tips for Windows Users
 
-- **Use the official Python installer** from [python.org](https://python.org)
-- **Check "Add Python to PATH"** during installation
-- **Choose "Install for all users"** if you have admin rights
-- **Use Python 3.9-3.12** for best compatibility (3.13+ may have issues)
-- **Always use 64-bit Python** (required for GSPy)
+* **Use the official Python installer** from [python.org](https://python.org).
+* **Recommended:** Check **"Add python.exe to PATH"** during installation (though verify it adds the correct version if you have multiple installs).
+* **Use Python 3.11 or 3.14 (64-bit)** as required by GSPy v1.8.0+.
+* **Always use 64-bit Python** (required for GSPy DLLs).
 
-### If GSPy Still Can't Find Python
+### Troubleshooting Common Errors
 
-1. **Check your JSON `python_path`** matches your actual Python installation directory
-2. **Verify Python is 64-bit**: `python -c "import platform; print(platform.architecture())"`
-3. **Check file permissions** - ensure GSPy can read the Python directory
-4. **Try absolute paths** in your JSON config rather than relative paths
-5. **Restart GoldSim** after changing environment variables
+1.  **GoldSim Error: "Cannot load DLL..." (No Log File Created)**
+    * **Cause:** Windows cannot find the required `pythonXXX.dll` (e.g., `python311.dll`) dependency for your `GSPy_*.dll`.
+    * **Solution:** Ensure the correct Python installation directory (3.11 or 3.14) is added to your system `PATH` environment variable and that you have restarted GoldSim/your computer. Alternatively, manually copy the required `pythonXXX.dll` from the Python installation folder into the same directory as your `GSPy_*.dll`.
+2.  **GSPy Log Error: `Could not initialize NumPy C-API`**
+    * **Cause:** Usually a mismatch between the Python version GSPy was compiled for and the Python version found/used at runtime, or NumPy not installed correctly for that version.
+    * **Solution:** Verify you are using the correct GSPy DLL (`_py311` or `_py314`) for your installed Python version. Double-check the `python_path` in your JSON file is correct. Ensure NumPy is installed for that specific Python version (`py -X.Y -m pip install numpy`).
+3.  **GSPy Log Error: `Failed to load Python script...` or `Cannot find function...`**
+    * **Cause:** GSPy initialized Python correctly but couldn't find/import your `.py` file or the specified function within it.
+    * **Solution:** Check the `script_path` and `function_name` in your JSON file. Ensure the `.py` file exists at that location and doesn't have syntax errors. Make sure the function name matches exactly.
+4.  **Check JSON `python_path`:** Verify it matches your actual installation directory precisely (use `where python` or `py -X.Y -c "import sys; print(sys.executable)"` to confirm).
+5.  **Verify Python is 64-bit:** Use `py -X.Y -c "import platform; print(platform.architecture())"`. Should show '64bit'.
+6.  **Check file permissions:** Ensure GoldSim/GSPy has permission to read the Python directory and your script file.
+7.  **Restart GoldSim:** Especially after changing environment variables.
 
 -----
 
@@ -142,7 +158,7 @@ In the same folder, create a new text file named **`scalar_test.json`** and past
 
 ```json
 {
-  "python_path": "C:\\Users\\username\\AppData\\Local\\Programs\\Python\\Python313",
+  "python_path": "C:\\Users\\username\\AppData\\Local\\Programs\\Python\\Python311",
   "script_name": "scalar_test.py",
   "function_name": "process_data",
   "log_level": 0,
@@ -287,7 +303,7 @@ Each GSPy run automatically creates a log file with a professional header:
 ```
 ========================================
 GSPy: The GoldSim-Python Bridge
-Version: 1.7.1
+Version: 1.8.0
 Build Date: Oct 25 2025 14:30:15
 ========================================
 
@@ -626,7 +642,7 @@ The example demonstrates how to size a vector or a matrix at runtime using sclar
 **Dynamic_Size_Test.json**
 ```json
 {
-  "python_path": "C:\\Users\\JasonLillywhite\\AppData\\Local\\Programs\\Python\\Python313",
+  "python_path": "C:\\Users\\username\\AppData\\Local\\Programs\\Python\\Python311",
   "script_path": "test_dynamic_sizing.py",
   "function_name": "process_data",
   "inputs": [
@@ -754,12 +770,197 @@ def process_data(*args):
 ```
 -----
 
+## Developer Documentation
+
+### Multi-Python Build System
+
+GSPy now supports building against multiple Python versions (3.11 and 3.14) using Visual Studio Property Sheets. This flexible system allows developers to quickly switch between Python targets without manually editing project files.
+
+**Rationale for Supported Versions:**
+
+* **Python 3.11:** Chosen as the primary stable target. It represents the final, mature version before significant C-API changes introduced in Python 3.12. Targeting 3.11 provides a robust option for users who prioritize stability or whose environments rely on pre-3.12 compatibility. GSPy v1.8.0 includes C++ patches ensuring NumPy initialization works correctly on 3.11. Security updates for 3.11 continue until October 2027. Note: Users must have Python 3.11 installed to use this DLL; it is not binary compatible with Python 3.10 or earlier.
+
+#### Prerequisites for Development
+
+* Visual Studio 2022 with the "Desktop development with C++" workload
+* Python 3.11 and/or Python 3.14 (64-bit installations)
+* NumPy package installed for each Python version
+
+#### Setting Up Environment Variables
+
+Before building, you must configure environment variables that point to your Python installations:
+
+**Step 1: Locate Your Python Installations**
+1. Open Command Prompt
+2. For Python 3.11: `where python3.11` or check `C:\Users\[Username]\AppData\Local\Programs\Python\Python311`
+3. For Python 3.14: `where python3.14` or check `C:\Users\[Username]\AppData\Local\Programs\Python\Python314`
+
+**Step 2: Set Environment Variables**
+1. Open **System Properties** → **Advanced** → **Environment Variables**
+2. Under **System Variables**, click **New** and add:
+   - **Variable name**: `PYTHON_3_11_HOME`
+   - **Variable value**: `C:\Users\[Username]\AppData\Local\Programs\Python\Python311` (your actual path)
+3. Click **New** again and add:
+   - **Variable name**: `PYTHON_3_14_HOME`
+   - **Variable value**: `C:\Users\[Username]\AppData\Local\Programs\Python\Python314` (your actual path)
+4. Click **OK** to save all changes
+5. **Restart Visual Studio** for changes to take effect
+
+**Step 3: Verify Setup**
+Open a new Command Prompt and verify:
+```cmd
+echo %PYTHON_3_11_HOME%
+echo %PYTHON_3_14_HOME%
+```
+
+Both should display your Python installation paths.
+
+#### Switching Between Python Versions
+
+The new build system uses Visual Studio Property Sheets to manage Python configurations:
+
+**Method 1: Using Property Manager (Recommended)**
+1. Open the GSPy solution in Visual Studio
+2. Go to **View** → **Property Manager**
+3. Expand your project configurations (Debug|x64, Release|x64)
+4. Right-click on a configuration and select **Add Existing Property Sheet**
+5. Choose either:
+   - `python_311.props` for Python 3.11
+   - `python_314.props` for Python 3.14
+6. Build the project
+
+**Method 2: Using Solution Explorer**
+1. Right-click the GSPy project in Solution Explorer
+2. Select **Add** → **Existing Item**
+3. Choose the desired `.props` file
+4. The Property Sheet will be applied to all configurations
+
+**Switching Between Versions:**
+1. In Property Manager, right-click the current Property Sheet and select **Remove**
+2. Add the desired Property Sheet using the steps above
+3. Rebuild the solution
+
+#### Build Configurations
+
+The system supports these combinations:
+
+| Configuration | Platform | Property Sheet | Target Python | Output |
+|---------------|----------|----------------|---------------|---------|
+| Debug | x64 | python_311.props | Python 3.11 | GSPy_Debug_311.dll |
+| Release | x64 | python_311.props | Python 3.11 | GSPy_Release_311.dll |
+| Debug | x64 | python_314.props | Python 3.14 | GSPy_Debug_314.dll |
+| Release | x64 | python_314.props | Python 3.14 | GSPy_Release_314.dll |
+
+#### Typical Development Workflows
+
+**Workflow 1: Single Python Version Development**
+1. Set up environment variables for your target Python version
+2. Add the corresponding Property Sheet to your project
+3. Develop and test normally
+4. Build in Release mode for distribution
+
+**Workflow 2: Multi-Version Testing**
+1. Set up environment variables for both Python versions
+2. Add Python 3.11 Property Sheet
+3. Build and test your changes
+4. Switch to Python 3.14 Property Sheet
+5. Build and test again to ensure compatibility
+6. Create release builds for both versions
+
+**Workflow 3: Team Development**
+1. Each developer sets up their own environment variables
+2. Property Sheets are shared in the repository
+3. Developers can work with their preferred Python version
+4. CI/CD builds both versions automatically
+
+#### Troubleshooting
+
+**Build Error: "Cannot find Python headers"**
+- Verify `PYTHON_X_XX_HOME` environment variables are set correctly
+- Ensure the paths point to the root Python installation directory
+- Restart Visual Studio after setting environment variables
+- Check that Python installation includes development headers
+
+**Build Error: "Cannot find python3XX.lib"**
+- Verify Python was installed with development libraries
+- Check that `[PYTHON_HOME]\libs\` directory exists and contains `python3XX.lib`
+- Ensure you're using a 64-bit Python installation
+
+**Property Sheet Not Taking Effect**
+- Verify the Property Sheet is listed in Property Manager
+- Check that it's applied to the correct configuration (Debug/Release x64)
+- Try removing and re-adding the Property Sheet
+- Clean and rebuild the solution
+
+**Environment Variables Not Recognized**
+- Restart Visual Studio completely after setting variables
+- Verify variables are set at System level, not User level
+- Test variables in Command Prompt: `echo %PYTHON_3_11_HOME%`
+
+**NumPy Headers Not Found**
+- Ensure NumPy is installed: `pip install numpy`
+- Verify NumPy installation: `python -c "import numpy; print(numpy.__file__)"`
+- Check that `[PYTHON_HOME]\Lib\site-packages\numpy\_core\include` exists
+
+**Multiple Python Versions Conflict**
+- Use specific Python executables: `python3.11 -m pip install numpy`
+- Verify each Python installation has its own NumPy: `python3.11 -c "import numpy"`
+- Ensure environment variables point to correct Python versions
+
+#### Team Onboarding
+
+**For New Developers:**
+1. **Install Prerequisites:**
+   - Visual Studio 2022 with C++ workload
+   - Python 3.11 and/or 3.14 (64-bit)
+   - NumPy for each Python version
+
+2. **Configure Environment:**
+   - Set `PYTHON_3_11_HOME` and `PYTHON_3_14_HOME` environment variables
+   - Restart Visual Studio
+
+3. **Verify Setup:**
+   - Clone the repository
+   - Open GSPy.sln in Visual Studio
+   - Add a Property Sheet (python_311.props or python_314.props)
+   - Build the solution successfully
+
+4. **Test Your Setup:**
+   - Run the example projects in the `examples/` folder
+   - Verify the DLL works with your Python installation
+
+**For Project Leads:**
+- Ensure all team members follow the same environment variable naming convention
+- Document any project-specific Python package requirements
+- Consider creating setup scripts for automated environment configuration
+- Establish team standards for which Python versions to support
+
+#### Advanced Configuration
+
+**Adding New Python Versions:**
+1. Create a new Property Sheet file (e.g., `python_312.props`)
+2. Copy the structure from existing Property Sheets
+3. Update paths to use `$(PYTHON_3_12_HOME)` environment variable
+4. Update library reference to `python312.lib`
+5. Set up the corresponding environment variable
+
+**Custom Python Installations:**
+- Environment variables can point to any Python installation location
+- Useful for custom builds, conda environments, or portable Python
+- Ensure the installation includes development headers and libraries
+
+**Build Automation:**
+- CI/CD systems can set environment variables programmatically
+- Use batch scripts to switch between Python versions automatically
+- Consider PowerShell scripts for complex build workflows
+
 ## Building from Source
 
 To build the C++ DLL from source, you will need:
 
   * Visual Studio 2022 with the "Desktop development with C++" workload.
-  * Project properties configured to point to your Python and NumPy `include` and `libs` directories.
+  * Environment variables configured for your target Python version (see Developer Documentation above).
+  * A Property Sheet applied for your target Python version.
   * Compile in **Release** mode for the **x64** platform.
 
 ### Updating Version Numbers
@@ -768,8 +969,8 @@ To increment the GSPy version, edit only these 3 constants in `GSPy.h`:
 
 ```cpp
 #define GSPY_VERSION_MAJOR 1
-#define GSPY_VERSION_MINOR 7  
-#define GSPY_VERSION_PATCH 1
+#define GSPY_VERSION_MINOR 8  
+#define GSPY_VERSION_PATCH 0
 ```
 
 All version strings, log headers, and GoldSim version reporting update automatically.

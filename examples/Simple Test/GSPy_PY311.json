@@ -1,8 +1,8 @@
 {
-  "python_path": "C:\\Users\\JasonLillywhite\\AppData\\Local\\Programs\\Python\\Python313",
+  "python_path": "C:\\Users\\JasonLillywhite\\AppData\\Local\\Programs\\Python\\Python311",
   "script_path": "scalar to scalar.py",
   "function_name": "process_data",
-  "log_level": 2,
+  "log_level": 3,
   "inputs": [
     {
       "name": "input_scalar",

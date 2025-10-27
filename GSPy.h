@@ -3,8 +3,8 @@
 
 // Version information
 #define GSPY_VERSION_MAJOR 1
-#define GSPY_VERSION_MINOR 7
-#define GSPY_VERSION_PATCH 1
+#define GSPY_VERSION_MINOR 8
+#define GSPY_VERSION_PATCH 0
 
 // Automatically generate version string and double from components
 #define STRINGIFY(x) #x

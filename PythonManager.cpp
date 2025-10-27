@@ -8,7 +8,7 @@
 #else
     #include <Python.h>
 #endif
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#define NPY_NO_DEPRECATED_API NPY_1_22_API_VERSION
 #include <numpy/ndarrayobject.h>
 
 #include "PythonManager.h"
@@ -124,12 +124,27 @@ static int calculate_total_elements(const json& dimensions) {
 // --- Initializes the NumPy C-API ---
 static bool initialize_numpy(std::string& errorMessage) {
     LogDebug("Initializing NumPy C-API...");
+    
+    // Step 1: Explicitly import numpy module (required for Python 3.12+)
+    PyObject* pNumpy = PyImport_ImportModule("numpy");
+    if (pNumpy == nullptr) {
+        errorMessage = "PyImport_ImportModule('numpy') failed. Check if NumPy is installed.";
+        LogError(errorMessage);
+        PyErr_Print();
+        return false;
+    }
+    
+    // Step 2: Release the module reference (we only needed to import it)
+    Py_DECREF(pNumpy);
+    
+    // Step 3: Now call _import_array() which will succeed
     if (_import_array() < 0) {
         errorMessage = "Error: Could not initialize NumPy C-API.";
         LogError(errorMessage);
         PyErr_Print();
         return false;
     }
+    
     LogDebug("NumPy C-API initialized successfully.");
     return true;
 }
