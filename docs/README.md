@@ -159,7 +159,7 @@ In the same folder, create a new text file named **`scalar_test.json`** and past
 ```json
 {
   "python_path": "C:\\Users\\username\\AppData\\Local\\Programs\\Python\\Python311",
-  "script_name": "scalar_test.py",
+  "script_path": "scalar_test.py",
   "function_name": "process_data",
   "log_level": 0,
   "inputs": [
@@ -222,7 +222,7 @@ def process_data(*args):
 ### Configuration (`.json`) File Details
 
   * **`python_path`**: Full path to your Python installation directory.
-  * **`script_name`**: The name of your Python script.
+  * **`script_path`**: The name of your Python script.
   * **`function_name`**: The function in your script that GSPy will call (default: "process_data")
   * **`inputs` / `outputs`**: Lists of data objects. **The order must match the order in the GoldSim Interface tab.**
       * **`name`**: A descriptive name for your reference.
