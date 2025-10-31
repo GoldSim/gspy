@@ -2,6 +2,49 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.3] - 2025-10-30
+### Fixed
+* **Time Series Array Dimension Bug:** Fixed array dimension ordering inconsistency in `MarshalGoldSimTimeSeriesToPython` function.
+  * **Issue:** Matrix time series were created with incorrect shape `(num_cols, num_rows, num_time_points)` instead of expected `(num_rows, num_cols, num_time_points)`
+  * **Solution:** Corrected dimension insertion order to ensure consistent array shapes between GoldSim-to-Python and Python-to-GoldSim marshalling
+  * **Impact:** Ensures proper data integrity for matrix time series and prevents confusion in complex simulations
+  * **Compatibility:** Scalar and vector time series remain unchanged; only matrix time series affected
+
+### Enhanced
+* **Complete Lookup Table Support:** Enhanced and verified full 1D, 2D, and 3D lookup table functionality.
+  * **1D Tables:** Simple row labels with dependent values for basic interpolation
+  * **2D Tables:** Row and column labels with matrix data for surface interpolation  
+  * **3D Tables:** Row, column, and layer labels with 3D data arrays for volume interpolation
+  * **Verification:** All table types successfully tested and verified to work with GoldSim
+  * **Format Compliance:** Implementation follows GoldSim DLL specification for table data marshalling
+
+* **Calendar Date Time Series Support:** 
+  * **Automatic Detection:** GSPy automatically handles `time_basis` field (0=elapsed time, 1=calendar dates)
+  * **Metadata Preservation:** Fix for `time_basis` and `data_type` values are preserved from inputs to outputs
+  * **Error Prevention:** Prevents "First entry in input history data occurs after start of simulation" errors
+  * **Julian Day Support:** Proper handling of Julian day numbers for calendar-based simulations
+
+* **Enhanced Example Scripts:** Updated all example Python scripts with logging integration.
+  * **GSPy Logging:** Replaced all `print()` statements with `gspy.log()` calls for unified logging
+  * **Appropriate Log Levels:** Used ERROR (0), INFO (2), and DEBUG (3) levels for message categorization
+  * **Performance Optimization:** Leverages GSPy's atomic log filtering for production performance
+  * **Thread Safety:** All logging now uses GSPy's thread-safe logging system
+
+### Updated
+* **Documentation:** Comprehensive updates to README.md with verified examples and best practices.
+  * **Time Series Section:** Complete documentation of scalar, vector, and matrix time series with correct array shapes
+  * **Calendar Date Examples:** Examples showing calendar-based time series handling
+  * **Lookup Table Examples:** Complete 1D, 2D, and 3D table generation with working code
+  * **Python Version Requirements:** Updated examples to use Python 3.14 for optimal compatibility
+  * **Troubleshooting Guide:** Enhanced troubleshooting section with solutions for common time series and table issues
+
+### Technical Details
+* **Array Shape Consistency:** Matrix time series now consistently use `(num_rows, num_cols, num_time_points)` shape in both directions
+* **GoldSim Format Compliance:** All lookup table implementations verified against GoldSim Help DLL specification
+* **Memory Layout Optimization:** NumPy C-order arrays provide correct memory sequence for GoldSim's expected data format
+* **Metadata Handling:** Robust preservation of time series metadata prevents configuration mismatches
+* **Example Verification:** All provided examples have been tested and verified to work correctly with GoldSim
+
 ## [1.8.0] - 2025-10-26
 ### Added
 * **Multi-Python Build System:** Implemented flexible build system supporting multiple Python versions (3.11 and 3.14) through Visual Studio Property Sheets.

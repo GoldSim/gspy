@@ -13,6 +13,11 @@
       "name": "input_timeseries2",
       "type": "timeseries",
       "dimensions": [2]
+    },
+    {
+      "name": "input_timeseries3",
+      "type": "timeseries",
+      "dimensions": [3, 2]
     }
   ],
   "outputs": [
@@ -26,6 +31,12 @@
       "name": "timeseries_2",
       "type": "timeseries",
       "dimensions": [],
+      "max_points": 1000
+    },
+    {
+      "name": "timeseries_3",
+      "type": "timeseries",
+      "dimensions": [2, 3],
       "max_points": 1000
     }
   ]

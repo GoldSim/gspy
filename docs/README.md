@@ -1,10 +1,8 @@
 # GSPy: The GoldSim-Python Bridge
 
-**Current Version: 1.8.0** | [Changelog](CHANGELOG.md)
+**Current Version: 1.8.3** | [Changelog](CHANGELOG.md)
 
 GSPy is a C++ bridge that allows GoldSim models to call external Python scripts. It acts as a shim DLL for GoldSim's `External` element, enabling users to leverage the capabilities of the Python ecosystem directly within their dynamic simulations.
-
-This project was designed to be simple, robust, and flexible, allowing modelers to extend GoldSim's capabilities without needing to write or compile any C++ code themselves.
 
 -----
 
@@ -158,7 +156,7 @@ In the same folder, create a new text file named **`scalar_test.json`** and past
 
 ```json
 {
-  "python_path": "C:\\Users\\username\\AppData\\Local\\Programs\\Python\\Python311",
+  "python_path": "C:\\Users\\username\\AppData\\Local\\Programs\\Python\\Python314",
   "script_path": "scalar_test.py",
   "function_name": "process_data",
   "log_level": 0,
@@ -244,7 +242,7 @@ GSPy features a high-performance logging system with atomic-level filtering and 
 
 ```json
 {
-  "python_path": "C:\\Python311",
+  "python_path": "C:\\Users\\username\\AppData\\Local\\Programs\\Python\\Python314",
   "script_path": "my_script.py", 
   "function_name": "process_data",
   "log_level": 0,
@@ -327,58 +325,78 @@ Build Date: Oct 25 2025 14:30:15
 | Matrix       | 2D NumPy Array                                                                       |
 | Time Series  | Python Dictionary with keys: `"timestamps"`, `"data"`, `"time_basis"`, `"data_type"` |
 
-| To GoldSim   | Returned from Python as...                                                           |
-| :----------- | :----------------------------------------------------------------------------------- |
-| Scalar       | `float` or `int`                                                                     |
-| Vector       | 1D NumPy Array                                                                       |
-| Matrix       | 2D NumPy Array                                                                       |
-| Time Series  | Python Dictionary with keys: `"timestamps"`, `"data"`, `"time_basis"`, `"data_type"` |
-| Lookup Table | Python Dictionary with keys: `"table_dim"`, `"row_labels"`, `"col_labels"`, `"data"` |
+**Time Series Data Shapes**:
+- **Scalar Time Series**: `"data"` is 1D NumPy array with shape `(num_time_points,)`
+- **Vector Time Series**: `"data"` is 2D NumPy array with shape `(num_rows, num_time_points)`
+- **Matrix Time Series**: `"data"` is 3D NumPy array with shape `(num_rows, num_cols, num_time_points)`
+
+| To GoldSim   | Returned from Python as...                                                                             |
+| :----------- | :----------------------------------------------------------------------------------------------------- |
+| Scalar       | `float` or `int`                                                                                       |
+| Vector       | 1D NumPy Array                                                                                         |
+| Matrix       | 2D NumPy Array                                                                                         |
+| Time Series  | Python Dictionary with keys: `"timestamps"`, `"data"`, `"time_basis"`, `"data_type"`                   |
+| Lookup Table | Python Dictionary with keys: `"table_dim"`, `"row_labels"`, `"col_labels"`, `"layer_labels"`, `"data"` |
+
+**Important**: For time series outputs, the `"data"` array must follow the same shape conventions as inputs. Time is always the last dimension.
 
 -----
 ## Extended Examples
 
 ### Example 1: Time Series Example
-This example demonstrates how to handle time series data. It passes both a scalar time series and a 2-element vector time series from GoldSim to a Python script. The script performs a simple calculation and returns two new time series back to GoldSim.
+This example demonstrates how to handle all three types of time series data: scalar, vector, and matrix time series. It shows the correct NumPy array shapes and how to process them in Python.
 
 **GSPy_TS_Test.json**
-This configuration defines the interface. Note the use of "type": "timeseries" and that max_points is required for outputs to pre-allocate memory.
+This configuration defines the interface for scalar, vector, and matrix time series. Note that `max_points` is required for outputs to pre-allocate memory.
 
 ```json
 {
-  "python_path": "C:\\Python311",
+  "python_path": "C:\\Users\\username\\AppData\\Local\\Programs\\Python\\Python314",
   "script_path": "test_timeseries.py",
   "function_name": "process_data",
+  "log_level": 3,
   "inputs": [
     {
-      "name": "input_timeseries1",
+      "name": "input_scalar_ts",
       "type": "timeseries",
       "dimensions": []
     },
     {
-      "name": "input_timeseries2",
+      "name": "input_vector_ts",
       "type": "timeseries",
       "dimensions": [2]
+    },
+    {
+      "name": "input_matrix_ts",
+      "type": "timeseries",
+      "dimensions": [3, 2]
     }
   ],
   "outputs": [
     {
-      "name": "timeseries_1",
+      "name": "output_vector_ts",
       "type": "timeseries",
       "dimensions": [2],
       "max_points": 1000
     },
     {
-      "name": "timeseries_2",
+      "name": "output_scalar_ts",
       "type": "timeseries",
       "dimensions": [],
+      "max_points": 1000
+    },
+    {
+      "name": "output_matrix_ts",
+      "type": "timeseries",
+      "dimensions": [2, 3],
       "max_points": 1000
     }
   ]
 }
 ```
+
 **test_timeseries.py**
-The Python script receives and returns time series as dictionaries. The data key holds a NumPy array where each row represents a dimension and each column represents a time step.
+The Python script demonstrates handling of different time series array shapes and performs simple transformations.
 
 ```python
 import numpy as np
@@ -386,77 +404,250 @@ import traceback
 
 def process_data(*args):
   """
-  Receives a scalar time series and a vector time series.
-  Returns a vector time series and a new scalar time series.
+  Receives scalar, vector, and matrix time series.
+  Returns vector, scalar, and matrix time series with transformations.
   """
   try:
-    # 1. Unpack the two input Time Series dictionaries
+    # 1. Unpack the three input Time Series dictionaries
     input_ts_scalar_dict = args[0]
     input_ts_vector_dict = args[1]
+    input_ts_matrix_dict = args[2]
     
     # 2. Extract the data and timestamps from each
     scalar_timestamps = input_ts_scalar_dict["timestamps"]
-    scalar_data = input_ts_scalar_dict["data"]
+    scalar_data = input_ts_scalar_dict["data"]  # Shape: (num_time_points,)
     
     vector_timestamps = input_ts_vector_dict["timestamps"]
-    vector_data = input_ts_vector_dict["data"] # This will have shape (2, num_points)
+    vector_data = input_ts_vector_dict["data"]  # Shape: (2, num_time_points)
     
-    # 3. Prepare the outputs
+    matrix_timestamps = input_ts_matrix_dict["timestamps"]
+    matrix_data = input_ts_matrix_dict["data"]  # Shape: (3, 2, num_time_points)
+
+    print("--- Python Script Received ---")
+    print(f"Scalar TS data shape: {scalar_data.shape}")
+    print(f"Vector TS data shape: {vector_data.shape}")
+    print(f"Matrix TS data shape: {matrix_data.shape}")
+    print(f"Time basis: {input_ts_scalar_dict['time_basis']} (0=elapsed time, 1=calendar dates)")
+    print(f"Data type: {input_ts_scalar_dict['data_type']} (0=instantaneous, 1=constant, 2=change, 3=discrete)")
     
-    # Output 1: Pass the input vector time series straight through
+    # 3. Prepare the outputs with simple transformations
+    
+    # Output 1: Vector time series - Scale the input vector by 2
+    output_vector_data = vector_data * 2.0
     output_ts_vector = {
         "timestamps": vector_timestamps,
-        "data": vector_data,
+        "data": output_vector_data,
         "time_basis": input_ts_vector_dict["time_basis"],
         "data_type": input_ts_vector_dict["data_type"]
     }
     
-    # Output 2: Create a new scalar time series by adding the inputs
-    # Note: Assumes both time series have the same timestamps
-    new_scalar_data = vector_data[0, :] + scalar_data
-    
+    # Output 2: Scalar time series - Sum scalar with mean of first vector row
+    vector_row1_mean = np.mean(vector_data[0, :])
+    output_scalar_data = scalar_data + vector_row1_mean
     output_ts_scalar = {
-        "timestamps": vector_timestamps,
-        "data": new_scalar_data,
+        "timestamps": scalar_timestamps,
+        "data": output_scalar_data,
         "time_basis": input_ts_scalar_dict["time_basis"],
         "data_type": input_ts_scalar_dict["data_type"]
     }
+    
+    # Output 3: Matrix time series (2x3) - Transpose and extend input matrix
+    # Take first 2 rows and transpose to get 2x3 matrix
+    matrix_subset = matrix_data[:2, :, :]  # Shape: (2, 2, num_time_points)
+    processed_matrix_data = np.transpose(matrix_subset, (1, 0, 2))  # Shape: (2, 2, num_time_points)
+    
+    # Extend to 2x3 by adding a third column
+    num_time_points = processed_matrix_data.shape[2]
+    extended_matrix = np.zeros((2, 3, num_time_points))
+    extended_matrix[:, :2, :] = processed_matrix_data  # Fill first 2 columns
+    extended_matrix[:, 2, :] = processed_matrix_data[:, 1, :] * 1.5  # Third column = 1.5 * second column
+    
+    output_ts_matrix = {
+        "timestamps": matrix_timestamps[:num_time_points],  # Match time points
+        "data": extended_matrix,
+        "time_basis": input_ts_matrix_dict["time_basis"],
+        "data_type": input_ts_matrix_dict["data_type"]
+    }
+
+    print("--- Python Script Outputs ---")
+    print(f"Output Vector shape: {output_vector_data.shape}")
+    print(f"Output Scalar shape: {output_scalar_data.shape}")
+    print(f"Output Matrix shape: {extended_matrix.shape}")
 
     # 4. Return the results as a tuple in the correct order
-    return (output_ts_vector, output_ts_scalar)
+    return (output_ts_vector, output_ts_scalar, output_ts_matrix)
 
   except Exception:
+    print(f"!!! PYTHON EXCEPTION !!!")
+    print(traceback.format_exc())
     # In case of error, return properly formatted empty time series
-    empty_ts = {"timestamps": np.array([0.0]), "data": np.array([0.0]), "time_basis": 0.0, "data_type": 0.0}
-    return (empty_ts, empty_ts)
+    dummy_ts_vector = {"timestamps": np.array([0.0]), "data": np.zeros((2, 1)), "time_basis": 0.0, "data_type": 0.0}
+    dummy_ts_scalar = {"timestamps": np.array([0.0]), "data": np.zeros(1), "time_basis": 0.0, "data_type": 0.0}
+    dummy_ts_matrix = {"timestamps": np.array([0.0]), "data": np.zeros((2, 3, 1)), "time_basis": 0.0, "data_type": 0.0}
+    return (dummy_ts_vector, dummy_ts_scalar, dummy_ts_matrix)
 ```
 
-Notes:
+**Time Series Array Shapes**:
+
+GSPy uses consistent NumPy array shapes for time series data:
+
+- **Scalar Time Series**: 1D array with shape `(num_time_points,)`
+- **Vector Time Series**: 2D array with shape `(num_rows, num_time_points)`
+- **Matrix Time Series**: 3D array with shape `(num_rows, num_cols, num_time_points)`
+
+**Key Points**:
+- Time is always the **last dimension** (fastest-changing in memory)
+- For matrix time series, the shape is `(rows, columns, time_points)`
 
 **Time Series Dictionary Format**: Time series are passed as Python dictionaries with **four required keys**:
 - `"timestamps"`: 1D NumPy array of time values
-- `"data"`: NumPy array containing the time series values
-- `"time_basis"`: Float value (typically 0.0, pass through from input)
-- `"data_type"`: Float value (typically 0.0, pass through from input)
+- `"data"`: NumPy array containing the time series values (see shapes above)
+- `"time_basis"`: Float value indicating time format:
+  - `0.0` = Elapsed time (e.g., days since simulation start: 0, 33, 100)
+  - `1.0` = Calendar dates (actual datetime values)
+- `"data_type"`: Float value indicating data interpretation:
+  - `0.0` = Instantaneous value
+  - `1.0` = Constant value over next time interval
+  - `2.0` = Change over next time interval  
+  - `3.0` = Discrete change
 
-Data Shape: The "data" value is a NumPy array. A scalar time series will have a 1D array, while a vector time series will have a 2D array of shape (number_of_elements, number_of_timesteps).
+**Time Handling**: GSPy handles both elapsed time and calendar date time series. The `timestamps` array contains the actual time values (elapsed days or date values), and the `time_basis` field tells GoldSim how to interpret them. Always preserve these values when creating output time series.
 
-Memory Allocation: You must specify "max_points" for any output time series in the JSON file. This allows GoldSim to allocate the necessary memory buffer to receive the data from Python.
+**Memory Allocation**: You must specify `"max_points"` for any output time series in the JSON file. This allows GoldSim to allocate the necessary memory buffer to receive the data from Python.
 
 **Important**: Always preserve the `time_basis` and `data_type` values from input time series when creating outputs. These contain metadata that GoldSim requires.
 
+#### Calendar-Based Time Series Example
+
+For calendar-based time series (e.g., simulation starting September 12, 2025 with 100-day duration), the timestamps will be Julian day numbers and `time_basis = 1.0`. Here's how to handle them:
+
+```python
+import numpy as np
+import traceback
+import gspy
+
+def process_data(*args):
+  """
+  Receives a scalar time series, a vector time series, and a matrix time series.
+  
+  Returns a vector time series (2 items), scalar time series, and matrix time series (2x3).
+  """
+  try:
+    # 1. Unpack the three input Time Series dictionaries
+    input_ts_scalar_dict = args[0]
+    input_ts_vector_dict = args[1]
+    input_ts_matrix_dict = args[2]
+    
+    # 2. Extract the data and timestamps from each
+    scalar_timestamps = input_ts_scalar_dict["timestamps"]
+    scalar_data = input_ts_scalar_dict["data"]  # Shape: (3,) - values [1, 10, 5]
+    
+    vector_timestamps = input_ts_vector_dict["timestamps"]
+    vector_data = input_ts_vector_dict["data"]  # Shape: (2, 3) - 2 rows, 3 time points
+    
+    matrix_timestamps = input_ts_matrix_dict["timestamps"]
+    matrix_data = input_ts_matrix_dict["data"]  # Shape: (3, 2, 6) - 3 rows, 2 cols, 6 time points
+
+    gspy.log("--- Python Script Received ---", 2)
+    gspy.log(f"Scalar TS data shape: {scalar_data.shape}, values: {scalar_data}", 3)
+    gspy.log(f"Scalar TS timestamps: {scalar_timestamps}", 3)
+    gspy.log(f"Scalar TS time_basis: {input_ts_scalar_dict['time_basis']} (0=elapsed, 1=calendar)", 3)
+    gspy.log(f"Vector TS data shape: {vector_data.shape}", 3)
+    gspy.log(f"Vector TS timestamps: {vector_timestamps}", 3)
+    gspy.log(f"Vector TS time_basis: {input_ts_vector_dict['time_basis']} (0=elapsed, 1=calendar)", 3)
+    gspy.log(f"Matrix TS data shape: {matrix_data.shape}", 3)
+    gspy.log(f"Matrix TS timestamps: {matrix_timestamps}", 3)
+    gspy.log(f"Matrix TS time_basis: {input_ts_matrix_dict['time_basis']} (0=elapsed, 1=calendar)", 3)
+    
+    # 3. Prepare the outputs
+    
+    # Output 1: Vector time series (2 items) - Scale the input vector by 2
+    output_vector_data = vector_data * 2.0  # Simple scaling transformation
+    output_ts_vector = {
+        "timestamps": vector_timestamps,
+        "data": output_vector_data,
+        "data_type": input_ts_vector_dict["data_type"],  # Preserve input data_type
+        "time_basis": input_ts_vector_dict["time_basis"]  # Preserve input time_basis
+    }
+    
+    # Output 2: Scalar time series - Sum the scalar input with the mean of the first vector row
+    vector_row1_mean = np.mean(vector_data[0, :])  # Mean of first row of vector
+    output_scalar_data = scalar_data + vector_row1_mean  # Add mean to each scalar value
+    output_ts_scalar = {
+        "timestamps": scalar_timestamps,
+        "data": output_scalar_data,
+        "data_type": input_ts_scalar_dict["data_type"],  # Preserve input data_type
+        "time_basis": input_ts_scalar_dict["time_basis"]  # Preserve input time_basis
+    }
+    
+    # Output 3: Matrix time series (2x3) - Transpose and take subset of input matrix
+    # Take first 2 rows and transpose to get 2x3 matrix, use first 3 time points
+    matrix_subset = matrix_data[:2, :, :3]  # Take first 2 rows, all columns, first 3 time points
+    processed_matrix_data = np.transpose(matrix_subset, (1, 0, 2))  # Shape becomes (2, 2, 3)
+    
+    # Extend to 2x3 by duplicating the second row
+    extended_matrix = np.zeros((2, 3, 3))
+    extended_matrix[:, :2, :] = processed_matrix_data  # Fill first 2 columns
+    extended_matrix[:, 2, :] = processed_matrix_data[:, 1, :] * 1.5  # Third column = 1.5 * second column
+    
+    output_ts_matrix = {
+        "timestamps": scalar_timestamps,  # Use scalar timestamps (3 points) for output matrix
+        "data": extended_matrix,
+        "data_type": input_ts_scalar_dict["data_type"],  # Preserve input data_type
+        "time_basis": input_ts_scalar_dict["time_basis"]  # Preserve input time_basis
+    }
+
+    gspy.log("--- Python Script Outputs ---", 2)
+    gspy.log(f"Output Vector shape: {output_vector_data.shape}", 3)
+    gspy.log(f"Output Scalar shape: {output_scalar_data.shape}", 3)
+    gspy.log(f"Output Matrix shape: {extended_matrix.shape}", 3)
+
+    # 4. Return the results as a tuple in the correct order
+    return (output_ts_vector, output_ts_scalar, output_ts_matrix)
+
+  except Exception as e:
+    gspy.log("!!! PYTHON EXCEPTION !!!", 0)
+    gspy.log(traceback.format_exc(), 0)
+    
+    # In case of error, return a tuple of the correct size/shape with dummy values
+    # Try to preserve time_basis from inputs if available, otherwise default to elapsed time
+    try:
+        time_basis = args[0]["time_basis"] if len(args) > 0 else 0.0
+        data_type = args[0]["data_type"] if len(args) > 0 else 0.0
+        # Use appropriate dummy timestamps based on time_basis
+        if time_basis == 1.0:  # Calendar dates
+            dummy_timestamps = np.array([45543.0, 45544.0, 45545.0])  # Approx Sept 12-14, 2025
+        else:  # Elapsed time
+            dummy_timestamps = np.array([0, 1, 2])
+    except:
+        time_basis = 0.0
+        data_type = 0.0
+        dummy_timestamps = np.array([0, 1, 2])
+    
+    dummy_ts_vector = {"timestamps": dummy_timestamps, "data": np.zeros((2, 3)), "data_type": data_type, "time_basis": time_basis}
+    dummy_ts_scalar = {"timestamps": dummy_timestamps, "data": np.zeros(3), "data_type": data_type, "time_basis": time_basis}
+    dummy_ts_matrix = {"timestamps": dummy_timestamps, "data": np.zeros((2, 3, 3)), "data_type": data_type, "time_basis": time_basis}
+    return (dummy_ts_vector, dummy_ts_scalar, dummy_ts_matrix)
+```
+
+**Key Points for Calendar Time Series**:
+- **Timestamps**: Julian day numbers (e.g., 45543.0 ≈ September 12, 2025)
+- **time_basis = 1.0**: Tells GoldSim these are calendar dates
+- **No conversion needed**: Work with raw timestamp values; GoldSim handles date interpretation
+- **Preserve metadata**: Always return the same `time_basis` and `data_type` values
+
 -----
 
-### Example 2: Lookup Table
+### Example 2: Lookup Table (1D, 2D, and 3D)
 
-This example demonstrates how to dynamically generate a complete GoldSim Lookup Table from within Python. It takes a single scalar value from GoldSim and uses it to construct the row labels, column labels, and the main data body of a 2D lookup table, which is then returned to GoldSim.
+This example demonstrates how to dynamically generate complete GoldSim Lookup Tables from within Python. It shows full support for 1D, 2D, and 3D tables. The example takes a single scalar value from GoldSim and uses it to construct all three table types, demonstrating the complete range of GSPy's lookup table capabilities. **This example has been successfully tested and verified to work correctly with GoldSim.**
 
 **LookupTable.json**
-The JSON configuration specifies the output type as "table". For table outputs, you must provide "max_elements" so GoldSim can pre-allocate enough memory. This should be a safe upper bound for the total number of cells in the table (rows * cols + rows + cols).
+The JSON configuration specifies multiple table outputs. For table outputs, you must provide "max_elements" so GoldSim can pre-allocate enough memory. This should be a safe upper bound for the total number of elements (data + labels).
 
 ```json
 {
-  "python_path": "C:\\Python311",
+  "python_path": "C:\\Users\\username\\AppData\\Local\\Programs\\Python\\Python314",
   "script_path": "lookup_table_script.py",
   "function_name": "process_data",
   "inputs": [
@@ -468,77 +659,138 @@ The JSON configuration specifies the output type as "table". For table outputs, 
   ],
   "outputs": [
     {
-      "name": "output_table",
+      "name": "output_table_1d",
+      "type": "table",
+      "max_elements": 100
+    },
+    {
+      "name": "output_table_2d",
       "type": "table",
       "max_elements": 500
+    },
+    {
+      "name": "output_table_3d",
+      "type": "table",
+      "max_elements": 1000
     }
   ]
 }
 ```
 
 **lookup_table_script.py**
-To return a lookup table, the Python script must construct and return a dictionary with a specific structure and keys. The C++ bridge code looks for these exact keys to correctly build the table in GoldSim.
+To return lookup tables, the Python script must construct and return dictionaries with specific structures. GSPy supports 1D, 2D, and 3D tables with different required keys.
 
 ```python
 import numpy as np
 import traceback
+import gspy
 
 def process_data(*args):
   """
-  Receives a scalar and uses it to generate and return a 2D Lookup Table.
+  Receives a scalar and uses it to generate 1D, 2D, and 3D Lookup Tables.
+  Demonstrates the complete range of GSPy's lookup table capabilities.
   """
   try:
     # 1. Unpack the input scalar
     input_scalar = args[0]
     
-    # 2. Generate the table components based on the input
-    row_labels = np.arange(4) * input_scalar  # e.g., [0, 10, 20, 30]
-    col_labels = np.arange(3) + 1            # e.g., [1, 2, 3]
+    gspy.log(f"--- Generating 1D, 2D, and 3D Lookup Tables (input_scalar = {input_scalar}) ---", 2)
     
-    # Create the 2D data array for the table body
-    data = np.outer(row_labels, col_labels)
-
-    # 3. Assemble the required dictionary for the lookup table
-    table_dictionary = {
-      "table_dim": 2,
-      "row_labels": row_labels,
-      "col_labels": col_labels,
-      "data": data
+    # 2. Generate 1D Lookup Table
+    row_labels_1d = np.array([0.0, 10.0, 20.0, 30.0, 40.0]) * input_scalar
+    data_1d = np.array([1.0, 4.0, 9.0, 16.0, 25.0]) * input_scalar  # Quadratic function
+    
+    table_1d_dictionary = {
+      "table_dim": 1,
+      "row_labels": row_labels_1d,
+      "data": data_1d
     }
     
-    # 4. Return the result as a tuple
-    return (table_dictionary,)
+    # 3. Generate 2D Lookup Table
+    row_labels_2d = np.arange(4) * input_scalar
+    col_labels_2d = np.arange(3) + 1
+    data_2d = np.outer(row_labels_2d, col_labels_2d)
+
+    table_2d_dictionary = {
+      "table_dim": 2,
+      "row_labels": row_labels_2d,
+      "col_labels": col_labels_2d,
+      "data": data_2d
+    }
+    
+    # 4. Generate 3D Lookup Table
+    row_labels_3d = np.array([10.0, 20.0, 30.0]) * input_scalar
+    col_labels_3d = np.array([1.0, 2.0]) + input_scalar
+    layer_labels_3d = np.array([100.0, 200.0, 300.0, 400.0])
+    
+    # Create 3D data array (rows × cols × layers)
+    num_rows, num_cols, num_layers = len(row_labels_3d), len(col_labels_3d), len(layer_labels_3d)
+    data_3d = np.zeros((num_rows, num_cols, num_layers))
+    
+    # Fill with data that depends on all three dimensions
+    for r in range(num_rows):
+        for c in range(num_cols):
+            for l in range(num_layers):
+                data_3d[r, c, l] = (row_labels_3d[r] + col_labels_3d[c] * layer_labels_3d[l]) * input_scalar
+
+    table_3d_dictionary = {
+      "table_dim": 3,
+      "row_labels": row_labels_3d,
+      "col_labels": col_labels_3d,
+      "layer_labels": layer_labels_3d,  # Required for 3D tables
+      "data": data_3d
+    }
+    
+    gspy.log("--- All lookup tables generated successfully ---", 2)
+    
+    # 5. Return all three tables as a tuple in the correct order
+    return (table_1d_dictionary, table_2d_dictionary, table_3d_dictionary)
 
   except Exception:
-    # In case of error, return an empty dictionary
-    return ({},)
+    gspy.log("!!! PYTHON EXCEPTION !!!", 0)
+    gspy.log(traceback.format_exc(), 0)
+    # Return dummy tables in case of error
+    dummy_1d = {"table_dim": 1, "row_labels": np.array([0.0, 1.0]), "data": np.array([1.0, 2.0])}
+    dummy_2d = {"table_dim": 2, "row_labels": np.array([0.0]), "col_labels": np.array([0.0]), "data": np.array([[1.0]])}
+    dummy_3d = {"table_dim": 3, "row_labels": np.array([0.0]), "col_labels": np.array([0.0]), "layer_labels": np.array([0.0]), "data": np.array([[[1.0]]])}
+    return (dummy_1d, dummy_2d, dummy_3d)
 ```
 
-Notes:
+**Lookup Table Dictionary Structure**:
 
-Required Dictionary Structure: A lookup table must be returned as a Python dictionary with the following keys:
+**1D Table:**
+- `"table_dim": 1`
+- `"row_labels"`: 1D NumPy array of row values
+- `"data"`: 1D NumPy array of dependent values
 
- - "table_dim": An integer, 1 for a 1D table or 2 for a 2D table.
- - "row_labels": A 1D NumPy array of monotonically increasing values for the row headers.
- - "col_labels": A 1D NumPy array of monotonically increasing values for the column headers. (This key should be omitted for a 1D table).
- - "data": A 1D or 2D NumPy array containing the table's body data. Its shape must match the labels.
+**2D Table:**
+- `"table_dim": 2`
+- `"row_labels"`: 1D NumPy array of row values
+- `"col_labels"`: 1D NumPy array of column values
+- `"data"`: 2D NumPy array of shape (num_rows, num_cols)
 
-Dynamic Generation: This method is extremely powerful for scenarios where table data is not static, such as generating temperature-dependent decay rates or pressure-dependent material properties on the fly.
+**3D Table:**
+- `"table_dim": 3`
+- `"row_labels"`: 1D NumPy array of row values
+- `"col_labels"`: 1D NumPy array of column values
+- `"layer_labels"`: 1D NumPy array of layer values
+- `"data"`: 3D NumPy array of shape (num_rows, num_cols, num_layers)
+
+**Important Notes:**
+- All label arrays must contain monotonically increasing values
+- Data array shape must match the dimensions defined by the labels
+- 3D tables require the additional `"layer_labels"` key
+- GSPy follows the GoldSim 3D table format: data[row, col, layer]
 
 -----
 
 ### Example 3: Mixed Data
 
-This is a "stress test" example that showcases the full power and flexibility of GSPy. It demonstrates passing a large number of mixed data types (scalars, vectors, matrices, and time series) to Python in a single function call. The script then performs various calculations and returns a completely different set of outputs, including a dynamically generated Lookup Table.
-
-This example proves that the inputs and outputs do not need to be symmetrical. You can have any number of inputs and any number of outputs of any supported type.
-
-**Mixed_Types.json**
-The JSON file defines the complex mapping. Notice that the inputs array has nine items, while the outputs array has seven items of different types and in a different order.
+This is a "stress test" example that showcases the different types of data GSPy can work with. It demonstrates passing mixed data types (scalars, vectors, matrices, and time series) to Python in a single function call. The script then performs various calculations and returns a completely different set of outputs, including a dynamically generated Lookup Table.
 
 ```json
 {
-  "python_path": "C:\\Python311",
+  "python_path": "C:\\Users\\username\\AppData\\Local\\Programs\\Python\\Python314",
   "script_path": "mixed_types.py",
   "function_name": "process_data",
   "inputs": [
@@ -561,9 +813,8 @@ The JSON file defines the complex mapping. Notice that the inputs array has nine
     { "name": "output_scalar_2", "type": "scalar", "dimensions": [] }
   ]
 }
-```
-**mixed_types.py**
-The Python script correctly unpacks the nine arguments from the *args tuple. It then returns a tuple with seven results, ensuring the order matches the outputs array in the JSON file.
+
+Below is the Python code to work with this json configuration file.
 
 ```python
 import numpy as np
@@ -629,145 +880,10 @@ def process_data(*args):
 
 Notes:
 
-Asymmetric Interface: The number, type, and order of inputs do not need to match the outputs. GSPy handles the complex mapping defined in the JSON.
+The order of variables received in Python's *args tuple is determined by their order in the "inputs" array of the JSON file.
 
-Argument Order is Critical: The order of variables received in Python's *args tuple is determined by their order in the "inputs" array of the JSON file.
+The order of variables in the return tuple from Python must exactly match their order in the "outputs" array of the JSON file.
 
-Return Order is Critical: The order of variables in the return tuple from Python must exactly match their order in the "outputs" array of the JSON file.
-
------
-### Example 4: Dynamic Array Sizing
-The example demonstrates how to size a vector or a matrix at runtime using sclar values passed from GoldSim.
-
-**Dynamic_Size_Test.json**
-```json
-{
-  "python_path": "C:\\Users\\username\\AppData\\Local\\Programs\\Python\\Python311",
-  "script_path": "test_dynamic_sizing.py",
-  "function_name": "process_data",
-  "inputs": [
-    {
-      "name": "vector_size",
-      "type": "scalar",
-      "dimensions": []
-    },
-    {
-      "name": "matrix_rows",
-      "type": "scalar", 
-      "dimensions": []
-    },
-    {
-      "name": "matrix_cols",
-      "type": "scalar",
-      "dimensions": []
-    },
-    {
-      "name": "static_scalar",
-      "type": "scalar",
-      "dimensions": []
-    },
-    {
-      "name": "static_vector",
-      "type": "vector",
-      "dimensions": [3]
-    },
-    {
-      "name": "dynamic_vector",
-      "type": "vector",
-      "dimensions_from": ["vector_size"]
-    },
-    {
-      "name": "dynamic_matrix",
-      "type": "matrix",
-      "dimensions_from": ["matrix_rows", "matrix_cols"]
-    }
-  ],
-  "outputs": [
-    {
-      "name": "result_scalar",
-      "type": "scalar",
-      "dimensions": []
-    },
-    {
-      "name": "result_vector",
-      "type": "vector",
-      "dimensions": [5]
-    }
-  ]
-}
-```
-
-**test_dynamic_sizing.py**
-```python
-import numpy as np
-import traceback
-
-def process_data(*args):
-    """
-    Test function for dynamic sizing functionality.
-    Expected inputs:
-    0. vector_size (scalar) - controls size of dynamic_vector
-    1. matrix_rows (scalar) - controls rows of dynamic_matrix  
-    2. matrix_cols (scalar) - controls cols of dynamic_matrix
-    3. static_scalar (scalar) - regular scalar input
-    4. static_vector (vector[3]) - regular static vector
-    5. dynamic_vector (vector with size from vector_size)
-    6. dynamic_matrix (matrix with size from matrix_rows x matrix_cols)
-    """
-    try:
-        print(f"\n=== Dynamic Sizing Test ===")
-        print(f"Received {len(args)} arguments:")
-        
-        # Extract and validate inputs
-        vector_size = args[0]
-        matrix_rows = args[1] 
-        matrix_cols = args[2]
-        static_scalar = args[3]
-        static_vector = args[4]
-        dynamic_vector = args[5]
-        dynamic_matrix = args[6]
-        
-        print(f"  vector_size = {vector_size}")
-        print(f"  matrix_rows = {matrix_rows}")
-        print(f"  matrix_cols = {matrix_cols}")
-        print(f"  static_scalar = {static_scalar}")
-        print(f"  static_vector = {static_vector} (shape: {static_vector.shape})")
-        print(f"  dynamic_vector = {dynamic_vector} (shape: {dynamic_vector.shape})")
-        print(f"  dynamic_matrix = {dynamic_matrix} (shape: {dynamic_matrix.shape})")
-        
-        # Validate dynamic dimensions
-        expected_vector_size = int(vector_size)
-        expected_matrix_shape = (int(matrix_rows), int(matrix_cols))
-        
-        print(f"\nValidation:")
-        print(f"  Expected dynamic_vector size: {expected_vector_size}, actual: {dynamic_vector.shape}")
-        print(f"  Expected dynamic_matrix shape: {expected_matrix_shape}, actual: {dynamic_matrix.shape}")
-        
-        if dynamic_vector.shape == (expected_vector_size,):
-            print("  Dynamic vector size is correct!")
-        else:
-            print("  Dynamic vector size mismatch!")
-            
-        if dynamic_matrix.shape == expected_matrix_shape:
-            print("  Dynamic matrix shape is correct!")
-        else:
-            print("  Dynamic matrix shape mismatch!")
-        
-        # Create outputs
-        result_scalar = np.sum(static_vector) + static_scalar + np.sum(dynamic_vector) + np.sum(dynamic_matrix)
-        result_vector = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
-        
-        print(f"\nOutputs:")
-        print(f"  result_scalar = {result_scalar}")
-        print(f"  result_vector = {result_vector}")
-        
-        return (result_scalar, result_vector)
-    
-    except Exception as e:
-        print(f"!!! PYTHON EXCEPTION !!!")
-        print(traceback.format_exc())
-        return (0.0, np.zeros(5))
-```
 -----
 
 ## Developer Documentation
@@ -844,12 +960,12 @@ The new build system uses Visual Studio Property Sheets to manage Python configu
 
 The system supports these combinations:
 
-| Configuration | Platform | Property Sheet | Target Python | Output |
-|---------------|----------|----------------|---------------|---------|
-| Debug | x64 | python_311.props | Python 3.11 | GSPy_Debug_311.dll |
-| Release | x64 | python_311.props | Python 3.11 | GSPy_Release_311.dll |
-| Debug | x64 | python_314.props | Python 3.14 | GSPy_Debug_314.dll |
-| Release | x64 | python_314.props | Python 3.14 | GSPy_Release_314.dll |
+| Configuration | Platform | Property Sheet   | Target Python | Output               |
+| ------------- | -------- | ---------------- | ------------- | -------------------- |
+| Debug         | x64      | python_311.props | Python 3.11   | GSPy_Debug_311.dll   |
+| Release       | x64      | python_311.props | Python 3.11   | GSPy_Release_311.dll |
+| Debug         | x64      | python_314.props | Python 3.14   | GSPy_Debug_314.dll   |
+| Release       | x64      | python_314.props | Python 3.14   | GSPy_Release_314.dll |
 
 #### Typical Development Workflows
 
@@ -970,7 +1086,7 @@ To increment the GSPy version, edit only these 3 constants in `GSPy.h`:
 ```cpp
 #define GSPY_VERSION_MAJOR 1
 #define GSPY_VERSION_MINOR 8  
-#define GSPY_VERSION_PATCH 0
+#define GSPY_VERSION_PATCH 3
 ```
 
 All version strings, log headers, and GoldSim version reporting update automatically.

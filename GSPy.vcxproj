@@ -68,18 +68,16 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="python_311.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  
   <!-- Conditional Python property sheet imports and output naming -->
   <PropertyGroup>
     <PythonPropsFile Condition="'$(PYTHON_VERSION)'=='311'">python_311.props</PythonPropsFile>
     <PythonPropsFile Condition="'$(PYTHON_VERSION)'=='314'">python_314.props</PythonPropsFile>
     <PythonPropsFile Condition="'$(PythonPropsFile)'==''">python_314.props</PythonPropsFile>
   </PropertyGroup>
-  
   <Import Project="$(PythonPropsFile)" Condition="Exists('$(PythonPropsFile)')" />
-  
   <!-- Set versioned output filename -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName Condition="'$(PYTHON_VERSION)'=='311'">GSPy_Release_311</TargetName>

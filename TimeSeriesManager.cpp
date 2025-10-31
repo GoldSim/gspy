@@ -67,13 +67,15 @@ PyObject* MarshalGoldSimTimeSeriesToPython(double*& current_inarg_pointer, const
     std::vector<npy_intp> data_dims_vec;
     data_dims_vec.push_back(num_time_points);
 
-    if (num_rows > 0) {
-        data_dims_vec.insert(data_dims_vec.begin(), num_rows);
-        data_size *= num_rows;
-    }
+    // Insert dimensions to match the expected shape in MarshalPythonTimeSeriesToGoldSim
+    // Final shape should be (num_rows, num_cols, num_time_points)
     if (num_cols > 0) {
         data_dims_vec.insert(data_dims_vec.begin(), num_cols);
         data_size *= num_cols;
+    }
+    if (num_rows > 0) {
+        data_dims_vec.insert(data_dims_vec.begin(), num_rows);
+        data_size *= num_rows;
     }
 
     PyObject* py_data = PyArray_SimpleNewFromData(static_cast<int>(data_dims_vec.size()), data_dims_vec.data(), NPY_FLOAT64, current_inarg_pointer);
@@ -120,15 +122,36 @@ bool MarshalPythonTimeSeriesToGoldSim(PyObject* py_object, const nlohmann::json&
     double num_rows = 0;
     double num_cols = 0;
 
-    if (ndim == 2) { // Vector Time Series
+    LogDebug("  Python->GoldSim: Array ndim = " + std::to_string(ndim));
+    std::string shape_str = "(";
+    for (int i = 0; i < ndim; ++i) {
+        if (i > 0) shape_str += ", ";
+        shape_str += std::to_string(shape[i]);
+    }
+    shape_str += ")";
+    LogDebug("  Python->GoldSim: Array shape = " + shape_str);
+
+    if (ndim == 1) { // Scalar Time Series
+        LogDebug("  Python->GoldSim: Scalar time series, num_rows = 0, num_cols = 0");
+    }
+    else if (ndim == 2) { // Vector Time Series
         num_rows = static_cast<double>(shape[0]);
+        LogDebug("  Python->GoldSim: Vector time series, num_rows = " + std::to_string(num_rows));
     }
     else if (ndim == 3) { // Matrix Time Series
         num_rows = static_cast<double>(shape[0]);
         num_cols = static_cast<double>(shape[1]);
+        LogDebug("  Python->GoldSim: Matrix time series, num_rows = " + std::to_string(num_rows) + ", num_cols = " + std::to_string(num_cols));
+    }
+    else {
+        errorMessage = "Error: Unsupported array dimensions: " + std::to_string(ndim);
+        return false;
     }
 
     // Write the GoldSim Time Series header
+    LogDebug("  Python->GoldSim: Writing header - ts_id=20.0, format=-3.0, time_basis=" + std::to_string(PyFloat_AsDouble(py_time_basis)) + ", data_type=" + std::to_string(PyFloat_AsDouble(py_data_type)));
+    LogDebug("  Python->GoldSim: Writing header - num_rows=" + std::to_string(num_rows) + ", num_cols=" + std::to_string(num_cols) + ", num_series=1.0");
+    
     *current_outarg_pointer++ = 20.0;
     *current_outarg_pointer++ = -3.0;
     *current_outarg_pointer++ = PyFloat_AsDouble(py_time_basis);
@@ -139,14 +162,29 @@ bool MarshalPythonTimeSeriesToGoldSim(PyObject* py_object, const nlohmann::json&
 
     // Write timestamps
     npy_intp ts_array_size = PyArray_SIZE(timestamps_array);
+    LogDebug("  Python->GoldSim: Writing " + std::to_string(ts_array_size) + " timestamps");
     *current_outarg_pointer++ = static_cast<double>(ts_array_size);
+    
+    if (PyArray_DATA(timestamps_array) == nullptr) {
+        errorMessage = "Error: Timestamps array data pointer is null";
+        return false;
+    }
+    
     memcpy(current_outarg_pointer, PyArray_DATA(timestamps_array), ts_array_size * sizeof(double));
     current_outarg_pointer += ts_array_size;
 
     // Write data
     npy_intp data_array_size = PyArray_SIZE(data_array);
+    LogDebug("  Python->GoldSim: Writing " + std::to_string(data_array_size) + " data values");
+    
+    if (PyArray_DATA(data_array) == nullptr) {
+        errorMessage = "Error: Data array data pointer is null";
+        return false;
+    }
+    
     memcpy(current_outarg_pointer, PyArray_DATA(data_array), data_array_size * sizeof(double));
     current_outarg_pointer += data_array_size;
 
+    LogDebug("  Python->GoldSim: Successfully marshalled time series to GoldSim");
     return true;
 }
