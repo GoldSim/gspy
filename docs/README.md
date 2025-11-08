@@ -1,6 +1,6 @@
 # GSPy: The GoldSim-Python Bridge
 
-**Current Version: 1.8.5** | [Changelog](CHANGELOG.md)
+**Current Version: 1.8.6** | [Changelog](CHANGELOG.md)
 
 GSPy is a C++ bridge that allows GoldSim models to call external Python scripts. It acts as a shim DLL for GoldSim's `External` element, enabling users to leverage the capabilities of the Python ecosystem directly within their dynamic simulations.
 
@@ -195,7 +195,7 @@ GSPy releases are distributed as `.zip` files containing the compiled DLLs and d
 3. Under "Assets", click on the `.zip` file to download it
 4. Extract the `.zip` file to a folder on your computer
 
-**Direct Download**: [Download Latest Release (v1.8.5)](https://github.com/GoldSim/GSPy/releases/latest/download/GSPy-v1.8.5.zip)
+**Direct Download**: [Download Latest Release (v1.8.6)](https://github.com/GoldSim/GSPy/releases/latest/download/GSPy-v1.8.6.zip)
 
 The release package includes:
 - Compiled DLLs for Python 3.11 and 3.14 (64-bit)
@@ -362,7 +362,7 @@ Each GSPy run automatically creates a log file with a clean header:
 ```
 ========================================
 GSPy: The GoldSim-Python Bridge
-Version: 1.8.5
+Version: 1.8.6
 ========================================
 2025-11-07 20:14:50 - INFO: Starting scalar calculation
 2025-11-07 20:14:50 - INFO: Calculation complete, result: 50.0
