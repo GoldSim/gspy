@@ -43,3 +43,7 @@ void LogError(const std::string& message);
 void LogWarning(const std::string& message);
 void LogInfo(const std::string& message);
 void LogDebug(const std::string& message);
+
+// Logs a message regardless of log_level setting (bypasses filtering)
+// Used for critical diagnostic information that must always be written
+void LogAlways(const std::string& message);

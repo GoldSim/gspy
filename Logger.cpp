@@ -68,15 +68,13 @@ void WriteLogHeader() {
         std::cerr << "========================================\n";
         std::cerr << "GSPy: The GoldSim-Python Bridge\n";
         std::cerr << "Version: " << GSPY_VERSION << "\n";
-        std::cerr << "Build Date: " << __DATE__ << " " << __TIME__ << "\n";
-        std::cerr << "========================================\n\n";
+        std::cerr << "========================================\n";
         std::cerr.flush();
     } else if (log_file.is_open()) {
         log_file << "========================================\n";
         log_file << "GSPy: The GoldSim-Python Bridge\n";
         log_file << "Version: " << GSPY_VERSION << "\n";
-        log_file << "Build Date: " << __DATE__ << " " << __TIME__ << "\n";
-        log_file << "========================================\n\n";
+        log_file << "========================================\n";
         log_file.flush();
     }
 }
@@ -137,4 +135,17 @@ void LogInfo(const std::string& message) {
 
 void LogDebug(const std::string& message) {
     Log("DEBUG: " + message, LOG_DEBUG);
+}
+
+void LogAlways(const std::string& message) {
+    // Thread-safe operations using mutex
+    std::lock_guard<std::mutex> lock(log_mutex);
+    
+    if (fallback_to_stderr) {
+        std::cerr << message << std::endl;
+        std::cerr.flush();
+    } else if (log_file.is_open()) {
+        log_file << message << '\n';
+        log_file.flush();  // Always flush for critical diagnostic information
+    }
 }

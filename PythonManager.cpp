@@ -15,6 +15,9 @@
 #include "GSPY_Error.h"
 #include <fstream>
 #include <vector>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
 #include "json.hpp"
 #include "Logger.h"
 #include "TimeSeriesManager.h"
@@ -165,6 +168,7 @@ static bool add_script_path_to_sys() {
 static bool load_script_and_function(std::string& errorMessage) {
     std::string script_path_full = config["script_path"];
     std::string function_name = config["function_name"];
+    
     LogDebug("Script path from config: " + script_path_full);
     LogDebug("Function name from config: " + function_name);
 
@@ -365,6 +369,9 @@ void FinalizePython() {
         // LOGGING: Note if no shutdown was necessary.
         LogInfo("Python interpreter was not initialized. No cleanup needed.");
     }
+    
+    // Log session finish message (can be suppressed by log_level = 0)
+    LogInfo("GSPy session finished successfully");
 }
 
 int GetNumberOfInputs() {

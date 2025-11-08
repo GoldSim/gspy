@@ -1,8 +1,56 @@
 # GSPy: The GoldSim-Python Bridge
 
-**Current Version: 1.8.3** | [Changelog](CHANGELOG.md)
+**Current Version: 1.8.5** | [Changelog](CHANGELOG.md)
 
 GSPy is a C++ bridge that allows GoldSim models to call external Python scripts. It acts as a shim DLL for GoldSim's `External` element, enabling users to leverage the capabilities of the Python ecosystem directly within their dynamic simulations.
+
+-----
+
+## Table of Contents
+
+- [GSPy: The GoldSim-Python Bridge](#gspy-the-goldsim-python-bridge)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [How It Works](#how-it-works)
+  - [Prerequisites](#prerequisites)
+  - [Python Setup \& Troubleshooting](#python-setup--troubleshooting)
+    - [**Requirement 1: Add Python to System PATH**](#requirement-1-add-python-to-system-path)
+    - [**Requirement 2: Configure `python_path` in JSON**](#requirement-2-configure-python_path-in-json)
+    - [Verifying Your Python Setup](#verifying-your-python-setup)
+    - [Installation Tips for Windows Users](#installation-tips-for-windows-users)
+    - [Troubleshooting Common Errors](#troubleshooting-common-errors)
+  - [Downloading GSPy](#downloading-gspy)
+  - [Quick Start Guide](#quick-start-guide)
+    - [1. Create a Project Folder](#1-create-a-project-folder)
+    - [2. Prepare the GSPy Files](#2-prepare-the-gspy-files)
+    - [3. Create the Configuration File](#3-create-the-configuration-file)
+    - [4. Create the Python Script](#4-create-the-python-script)
+    - [5. Configure GoldSim](#5-configure-goldsim)
+  - [Usage Reference](#usage-reference)
+    - [Configuration (`.json`) File Details](#configuration-json-file-details)
+    - [Performance Optimization](#performance-optimization)
+    - [Python Script API](#python-script-api)
+      - [Python Logging](#python-logging)
+      - [Log File Format](#log-file-format)
+      - [Data Type Mapping](#data-type-mapping)
+  - [Extended Examples](#extended-examples)
+    - [Example 1: Time Series Example](#example-1-time-series-example)
+      - [Calendar-Based Time Series Example](#calendar-based-time-series-example)
+    - [Example 2: Lookup Table (1D, 2D, and 3D)](#example-2-lookup-table-1d-2d-and-3d)
+    - [Example 3: Mixed Data](#example-3-mixed-data)
+  - [Developer Documentation](#developer-documentation)
+    - [Multi-Python Build System](#multi-python-build-system)
+      - [Prerequisites for Development](#prerequisites-for-development)
+      - [Setting Up Environment Variables](#setting-up-environment-variables)
+      - [Switching Between Python Versions](#switching-between-python-versions)
+      - [Build Configurations](#build-configurations)
+      - [Typical Development Workflows](#typical-development-workflows)
+      - [Troubleshooting](#troubleshooting)
+      - [Team Onboarding](#team-onboarding)
+      - [Advanced Configuration](#advanced-configuration)
+  - [Building from Source](#building-from-source)
+    - [Updating Version Numbers](#updating-version-numbers)
+  - [License](#license)
 
 -----
 
@@ -16,8 +64,8 @@ GSPy is a C++ bridge that allows GoldSim models to call external Python scripts.
       * Time Series
       * Lookup Tables (only from Python to GoldSim)
   * **Data-Driven Configuration:** A JSON file defines the interface, allowing for configurations without changing code.
-  * **Error Handling:** Python exceptions are caught gracefully and reported directly to the GoldSim user, simplifying debugging.
-  * **Enhanced Diagnostic Logging:** High-performance, configurable logging system with automatic log file headers, thread-safe operations, and seamless Python integration.
+  * **Error Handling:** Python exceptions can be caught gracefully and reported directly to the user.
+  * **Enhanced Diagnostic Logging:** Configurable logging system with automatic log file headers, thread-safe operations, and seamless Python integration.
 
 -----
 
@@ -49,12 +97,12 @@ To use the pre-compiled GSPy DLLs (v1.8.0+), you will need:
     * You must install the Python version matching the GSPy DLL you intend to use (e.g., `GSPy_Release_py311.dll` requires Python 3.11).
 3.  The **NumPy** and **SciPy** Python packages installed *for the specific Python version you are using*.
     * **NumPy** is required for basic GSPy operation (handling arrays).
-    * **SciPy** is required for advanced numerical methods like implicit equation solving (used in some examples like the Hazen-Williams solver) and other scientific computing tasks. It is recommended for broader GSPy usage.
+    * **SciPy** is required for advanced numerical methods like implicit equation solving (used in some examples posted on our website) and other scientific computing tasks. It is recommended for broader GSPy usage.
     * After installing Python, open a command prompt and run the appropriate command:
         * For Python 3.11: `py -3.11 -m pip install numpy scipy`
         * For Python 3.14: `py -3.14 -m pip install numpy scipy`
 4.  **Python Directory Added to System PATH:**
-    * The installation directory of your chosen Python version (e.g., `C:\...\Python311`) **must** be added to your Windows system `PATH` environment variable.
+    * The installation directory of your chosen Python version (e.g., `C:\...\Python314`) **must** be added to your Windows system `PATH` environment variable.
     * **Reason:** This is required so that Windows can find the necessary Python runtime DLL (e.g., `python311.dll`) when GoldSim initially tries to load the `GSPy_*.dll`. See "Method 2" below for instructions.
 5.  **JSON `python_path` Configured:**
     * You must configure the `python_path` setting inside the `GSPy_*.json` configuration file to point to the *exact* installation directory of the required Python version.
@@ -74,10 +122,10 @@ This allows Windows to find the core Python DLL (e.g., `python311.dll`) needed b
 2.  **Edit System Environment Variables:** Search for "Environment Variables" in the Windows Start Menu and click "Edit the system environment variables".
 3.  Click **"Environment Variables..."**.
 4.  Under **"System variables"**, find and select **"Path"**, then click **"Edit..."**.
-5.  Click **"New"** and add your Python installation directory (e.g., `C:\Users\YourUsername\AppData\Local\Programs\Python\Python311`).
+5.  Click **"New"** and add your Python installation directory (e.g., `C:\Users\YourUsername\AppData\Local\Programs\Python\Python314`).
 6.  *(Optional but Recommended)* Click **"New"** again and add the corresponding `Scripts` directory (e.g., `C:\Users\YourUsername\AppData\Local\Programs\Python\Python311\Scripts`).
 7.  Click **"OK"** on all dialogs.
-8.  **Restart GoldSim or your computer** for the changes to take effect.
+8.  This may require a system restart for the changes to take effect.
 
 ### **Requirement 2: Configure `python_path` in JSON**
 
@@ -135,6 +183,24 @@ If any command fails, review the installation steps and path settings.
 5.  **Verify Python is 64-bit:** Use `py -X.Y -c "import platform; print(platform.architecture())"`. Should show '64bit'.
 6.  **Check file permissions:** Ensure GoldSim/GSPy has permission to read the Python directory and your script file.
 7.  **Restart GoldSim:** Especially after changing environment variables.
+
+-----
+
+## Downloading GSPy
+
+GSPy releases are distributed as `.zip` files containing the compiled DLLs and documentation. To download:
+
+1. Visit the [GSPy Releases page](https://github.com/GoldSim/gspy/releases)
+2. Look for the latest release (at the top of the page)
+3. Under "Assets", click on the `.zip` file to download it
+4. Extract the `.zip` file to a folder on your computer
+
+**Direct Download**: [Download Latest Release (v1.8.5)](https://github.com/GoldSim/GSPy/releases/latest/download/GSPy-v1.8.5.zip)
+
+The release package includes:
+- Compiled DLLs for Python 3.11 and 3.14 (64-bit)
+- Complete documentation (README.md)
+- Example files and configurations
 
 -----
 
@@ -201,7 +267,6 @@ def process_data(*args):
     return (result,)
   except Exception:
     gspy.log("Error in calculation: " + traceback.format_exc(), 0)  # ERROR level
-    print(traceback.format_exc())
     return (0.0,)
 ```
 
@@ -249,12 +314,11 @@ GSPy features a high-performance logging system with atomic-level filtering and 
 ```
 
 **Performance Benefits:**
-- **Fast-path filtering**: Disabled log levels have minimal overhead (< 10ns per call)
+- **Fast-path filtering**: Disabled log levels have minimal overhead
 - **Atomic operations**: Thread-safe level checking without locks
 - **Hybrid flush policy**: Immediate flush for errors/warnings, write-only for info/debug
-- **Automatic fallback**: Seamless stderr redirect if file operations fail
+- **Automatic fallback**: stderr redirect if file operations fail
 
-This eliminates ~90-95% of logging overhead while preserving critical error reporting and maintaining thread safety.
 
 ### Python Script API
 
@@ -264,7 +328,7 @@ This eliminates ~90-95% of logging overhead while preserving critical error repo
 
 #### Python Logging
 
-Python scripts can write custom messages to the GSPy log file using the enhanced `gspy` module with thread-safe, high-performance logging:
+Python scripts can write custom messages to the GSPy log file using the enhanced `gspy` module with thread-safe logging:
 
 ```python
 import gspy
@@ -283,7 +347,7 @@ def process_data(*args):
     return (result,)
 ```
 
-**Enhanced Python Logging Features:**
+**Python Logging Features:**
 - **Thread-safe operations**: Safe for concurrent access with DLL logging
 - **Atomic filtering**: Disabled levels have minimal performance impact
 - **Reentrancy protection**: Prevents infinite recursion in logging calls
@@ -293,25 +357,17 @@ def process_data(*args):
 
 #### Log File Format
 
-Each GSPy run automatically creates a log file with a professional header:
+Each GSPy run automatically creates a log file with a clean header:
 
 ```
 ========================================
 GSPy: The GoldSim-Python Bridge
-Version: 1.8.0
-Build Date: Oct 25 2025 14:30:15
+Version: 1.8.5
 ========================================
-
-2025-10-25 14:30:15 - INFO: Logger initialized successfully
-2025-10-25 14:30:15 - INFO: Starting scalar calculation
-2025-10-25 14:30:15 - INFO: Calculation complete, result: 50.0
+2025-11-07 20:14:50 - INFO: Starting scalar calculation
+2025-11-07 20:14:50 - INFO: Calculation complete, result: 50.0
 ```
 
-**Features:**
-- **Automatic header**: Version, build date, and project title
-- **Timestamped entries**: Precise timing for debugging
-- **Thread-safe writes**: Safe for concurrent Python and DLL logging
-- **Fallback handling**: Automatic stderr redirect if file operations fail
 
 #### Data Type Mapping
 
@@ -398,6 +454,7 @@ The Python script demonstrates handling of different time series array shapes an
 ```python
 import numpy as np
 import traceback
+import gspy
 
 def process_data(*args):
   """
@@ -420,12 +477,12 @@ def process_data(*args):
     matrix_timestamps = input_ts_matrix_dict["timestamps"]
     matrix_data = input_ts_matrix_dict["data"]  # Shape: (3, 2, num_time_points)
 
-    print("--- Python Script Received ---")
-    print(f"Scalar TS data shape: {scalar_data.shape}")
-    print(f"Vector TS data shape: {vector_data.shape}")
-    print(f"Matrix TS data shape: {matrix_data.shape}")
-    print(f"Time basis: {input_ts_scalar_dict['time_basis']} (0=elapsed time, 1=calendar dates)")
-    print(f"Data type: {input_ts_scalar_dict['data_type']} (0=instantaneous, 1=constant, 2=change, 3=discrete)")
+    gspy.log("--- Python Script Received ---", 2)
+    gspy.log(f"Scalar TS data shape: {scalar_data.shape}", 3)
+    gspy.log(f"Vector TS data shape: {vector_data.shape}", 3)
+    gspy.log(f"Matrix TS data shape: {matrix_data.shape}", 3)
+    gspy.log(f"Time basis: {input_ts_scalar_dict['time_basis']} (0=elapsed time, 1=calendar dates)", 3)
+    gspy.log(f"Data type: {input_ts_scalar_dict['data_type']} (0=instantaneous, 1=constant, 2=change, 3=discrete)", 3)
     
     # 3. Prepare the outputs with simple transformations
     
@@ -466,17 +523,17 @@ def process_data(*args):
         "data_type": input_ts_matrix_dict["data_type"]
     }
 
-    print("--- Python Script Outputs ---")
-    print(f"Output Vector shape: {output_vector_data.shape}")
-    print(f"Output Scalar shape: {output_scalar_data.shape}")
-    print(f"Output Matrix shape: {extended_matrix.shape}")
+    gspy.log("--- Python Script Outputs ---", 2)
+    gspy.log(f"Output Vector shape: {output_vector_data.shape}", 3)
+    gspy.log(f"Output Scalar shape: {output_scalar_data.shape}", 3)
+    gspy.log(f"Output Matrix shape: {extended_matrix.shape}", 3)
 
     # 4. Return the results as a tuple in the correct order
     return (output_ts_vector, output_ts_scalar, output_ts_matrix)
 
   except Exception:
-    print(f"!!! PYTHON EXCEPTION !!!")
-    print(traceback.format_exc())
+    gspy.log("!!! PYTHON EXCEPTION !!!", 0)
+    gspy.log(traceback.format_exc(), 0)
     # In case of error, return properly formatted empty time series
     dummy_ts_vector = {"timestamps": np.array([0.0]), "data": np.zeros((2, 1)), "time_basis": 0.0, "data_type": 0.0}
     dummy_ts_scalar = {"timestamps": np.array([0.0]), "data": np.zeros(1), "time_basis": 0.0, "data_type": 0.0}
@@ -816,6 +873,7 @@ Below is the Python code to work with this json configuration file.
 ```python
 import numpy as np
 import traceback
+import gspy
 
 def process_data(*args):
   """
@@ -868,7 +926,8 @@ def process_data(*args):
     )
 
   except Exception:
-    print(f"!!! PYTHON EXCEPTION !!!\n{traceback.format_exc()}")
+    gspy.log("!!! PYTHON EXCEPTION !!!", 0)
+    gspy.log(traceback.format_exc(), 0)
     # In case of error, return a tuple of the correct size with dummy values
     empty_ts = {"timestamps": np.array([0.0]), "data": np.array([0.0]), "time_basis": 0.0, "data_type": 0.0}
     empty_table = {}

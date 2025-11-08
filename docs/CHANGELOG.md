@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.5] - 2025-11-07
+
+### Changed
+- **Simplified Log File Format:** Cleaned up log output with minimal, consistent header
+  * Removed build date from header for cleaner appearance
+  * Removed diagnostic clutter (config file, Python version, script path) from always-logged output
+  * Log now shows only version header followed by timestamped entries based on log level
+  * Provides cleaner output especially for production use with log level 0 (ERROR only)
+
+### Improved
+- **Documentation Examples:** Updated all Python code examples in README.md to follow best practices
+  * Replaced all `print()` statements with `gspy.log()` calls
+  * Added appropriate log levels: 0 (ERROR), 2 (INFO), 3 (DEBUG)
+  * Ensures examples demonstrate proper logging integration
+  * Added `import gspy` to all example scripts
+- **README Enhancements:** Improved documentation structure and accessibility
+  * Added comprehensive Table of Contents with anchor links to all major sections
+  * Added "Downloading GSPy" section with step-by-step GitHub download instructions for new users
+  * Improved navigation and discoverability of documentation content
+
+### Technical Details
+- Log format now consistently uses timestamped entries for all log levels
+- LogAlways() function simplified to remove timestamp formatting
+- Removed redundant diagnostic logging that cluttered output at higher log levels
+- Version number updated to 1.8.5 in GSPy.h and README.md
+
 ## [1.8.3] - 2025-10-30
 ### Fixed
 * **Time Series Array Dimension Bug:** Fixed array dimension ordering inconsistency in `MarshalGoldSimTimeSeriesToPython` function.
