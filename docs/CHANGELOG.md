@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.8.5] - 2025-11-07
+## [1.8.6] - 2025-11-07
 
 ### Changed
 - **Simplified Log File Format:** Cleaned up log output with minimal, consistent header
@@ -26,7 +26,7 @@ All notable changes to this project will be documented in this file.
 - Log format now consistently uses timestamped entries for all log levels
 - LogAlways() function simplified to remove timestamp formatting
 - Removed redundant diagnostic logging that cluttered output at higher log levels
-- Version number updated to 1.8.5 in GSPy.h and README.md
+- Version number updated to 1.8.6 in GSPy.h and README.md
 
 ## [1.8.3] - 2025-10-30
 ### Fixed
