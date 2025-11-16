@@ -113,6 +113,9 @@ bool MarshalPythonLookupTableToGoldSim(PyObject* py_object, const nlohmann::json
         npy_intp num_layers = PyArray_SIZE(layer_labels);
         npy_intp data_size = PyArray_SIZE(data);
 
+        LogDebug("  3D Table dimensions: " + std::to_string(num_rows) + " rows, " + 
+                 std::to_string(num_cols) + " cols, " + std::to_string(num_layers) + " layers");
+
         // Write 3D table sequence to GoldSim buffer
         *current_outarg_pointer++ = 3.0; // Number of dimensions
         *current_outarg_pointer++ = static_cast<double>(num_rows);
@@ -124,8 +127,20 @@ bool MarshalPythonLookupTableToGoldSim(PyObject* py_object, const nlohmann::json
         current_outarg_pointer += num_cols;
         memcpy(current_outarg_pointer, PyArray_DATA(layer_labels), num_layers * sizeof(double));
         current_outarg_pointer += num_layers;
-        memcpy(current_outarg_pointer, PyArray_DATA(data), data_size * sizeof(double));
-        current_outarg_pointer += data_size;
+
+        // GoldSim expects data in layer-major order: all rows/cols for layer 0, then all for layer 1, etc.
+        // Python NumPy array has shape (num_rows, num_cols, num_layers) with C-order (row-major)
+        // We need to reorder from (r,c,l) indexing to layer-major: data[layer][row][col]
+        double* data_ptr = (double*)PyArray_DATA(data);
+        for (npy_intp layer = 0; layer < num_layers; ++layer) {
+            for (npy_intp row = 0; row < num_rows; ++row) {
+                for (npy_intp col = 0; col < num_cols; ++col) {
+                    // Access NumPy array in (row, col, layer) order
+                    npy_intp index = row * num_cols * num_layers + col * num_layers + layer;
+                    *current_outarg_pointer++ = data_ptr[index];
+                }
+            }
+        }
 
         Py_DECREF(row_labels);
         Py_DECREF(col_labels);

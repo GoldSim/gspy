@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.7] - 2025-11-15
+
+### Fixed
+- **3D Lookup Table Data Ordering Bug:** Fixed critical data mapping issue in `LookupTableManager.cpp`
+  * **Issue:** 3D lookup table values were incorrectly mapped when passed from Python to GoldSim due to array ordering mismatch
+  * **Root Cause:** NumPy stores 3D arrays with shape `(rows, cols, layers)` in C-order (row-major), while GoldSim expects layer-major ordering
+  * **Solution:** Replaced direct `memcpy` with explicit reordering loops to properly convert from NumPy's (row, col, layer) format to GoldSim's layer-major format
+  * **Impact:** All 3D lookup table values now correctly correspond to their intended row, column, and layer indices
+  * **Verification:** Confirmed correct data mapping with test cases showing proper value alignment across all dimensions
+  * **Note:** 1D and 2D lookup tables were unaffected as their data layouts naturally aligned with GoldSim's expected format
+
 ## [1.8.6] - 2025-11-07
 
 ### Changed
