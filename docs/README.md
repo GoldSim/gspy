@@ -1,6 +1,6 @@
 # GSPy: The GoldSim-Python Bridge
 
-**Current Version: 1.8.7** | [Changelog](CHANGELOG.md)
+**Current Version: 1.8.8** | [Changelog](CHANGELOG.md)
 
 GSPy is a C++ bridge that allows GoldSim models to call external Python scripts. It acts as a shim DLL for GoldSim's `External` element, enabling users to leverage the capabilities of the Python ecosystem directly within their dynamic simulations.
 
@@ -31,6 +31,7 @@ GSPy is a C++ bridge that allows GoldSim models to call external Python scripts.
     - [Performance Optimization](#performance-optimization)
     - [Python Script API](#python-script-api)
       - [Python Logging](#python-logging)
+      - [Error Handling](#error-handling)
       - [Log File Format](#log-file-format)
       - [Data Type Mapping](#data-type-mapping)
   - [Extended Examples](#extended-examples)
@@ -64,7 +65,9 @@ GSPy is a C++ bridge that allows GoldSim models to call external Python scripts.
       * Time Series
       * Lookup Tables (only from Python to GoldSim)
   * **Data-Driven Configuration:** A JSON file defines the interface, allowing for configurations without changing code.
-  * **Error Handling:** Python exceptions can be caught gracefully and reported directly to the user.
+  * **Error Handling:** Two-tier error handling system:
+      * Graceful degradation for recoverable errors (log and continue)
+      * Fatal error signaling with `gspy.error()` to stop simulations when results would be invalid
   * **Enhanced Diagnostic Logging:** Configurable logging system with automatic log file headers, thread-safe operations, and seamless Python integration.
 
 -----
@@ -354,6 +357,90 @@ def process_data(*args):
 - **Unified output**: Python and DLL messages appear in the same log file with consistent formatting
 
 **Log Levels:** 0=ERROR, 1=WARNING, 2=INFO (default), 3=DEBUG
+
+#### Error Handling
+
+GSPy provides two approaches for handling errors in Python code:
+
+**1. Graceful Degradation** (Log only - GoldSim simulation continues):
+```python
+import gspy
+import traceback
+
+def process_data(*args):
+    try:
+        result = calculate(args)
+        return (result,)
+    except ValueError as e:
+        # Log warning and continue with safe fallback
+        gspy.log(f"Warning: {e}. Using default value.", 1)
+        return (0.0,)
+```
+
+**2. Fatal Error Signaling** (Stop simulation):
+```python
+import gspy
+import traceback
+
+def process_data(*args):
+    try:
+        result = calculate(args)
+        return (result,)
+    except Exception as e:
+        # Log detailed traceback
+        gspy.log(traceback.format_exc(), 0)
+        
+        # Signal fatal error - stops simulation
+        gspy.error(f"Critical error: {str(e)}")
+        
+        return (0.0,)  # Required but not used
+```
+
+**When to use `gspy.error()`:**
+- Division by zero or math domain errors
+- Required files or data missing
+- Invalid configuration that prevents calculation
+- Any error that makes results unreliable
+
+**What happens:**
+- Simulation stops immediately
+- GoldSim shows: "Error in external function. Return code 1."
+- Detailed error message and full Python traceback written to log file
+- **Note:** Due to 32-bit GoldSim / 64-bit DLL architecture, error messages appear in the log file rather than GoldSim dialogs
+
+**Comparison:**
+
+| Approach | Function | Simulation | Error Details |
+|----------|----------|------------|---------------|
+| Graceful Degradation | `gspy.log()` only | Continues | Log file |
+| Fatal Error | `gspy.error()` | **Stops** | Log file |
+
+**When you see "Error in external function. Return code 1." in GoldSim:**
+
+This means your Python code called `gspy.error()` to stop the simulation. To find out why:
+
+1. **Open the log file** - Located in the same directory as your .gsm file
+2. **Look for ERROR entries** - Scroll to the bottom or search for "ERROR:"
+3. **Read the details** - You'll find:
+   - Your custom error message from `gspy.error()`
+   - Full Python traceback showing exactly where the error occurred
+   - Any additional context from `gspy.log()` calls
+
+**Example log output:**
+```
+2025-11-18 11:51:11 - ERROR: Validation error: Traceback (most recent call last):
+  File "error_demo.py", line 37, in process_data
+    raise ValueError(f"Input value must be non-negative, got {input_value}")
+ValueError: Input value must be non-negative, got -0.45
+
+2025-11-18 11:51:11 - ERROR: Invalid input: Input value must be non-negative, got -0.45
+2025-11-18 11:51:11 - ERROR: Fatal error to report to GoldSim: GSPy Error: Invalid input...
+```
+
+**Why not show the error in GoldSim's dialog?**  
+GoldSim is 32-bit and GSPy is 64-bit, so they run in separate processes and cannot share memory. This is by design to support modern Python versions (3.11+). The log file is the authoritative source for debugging.
+
+**See also:** [Error Handling Best Practices](Error_Handling_Best_Practices.md) | [Quick Reference](Error_Handling_Quick_Reference.md) | [Using gspy.error()](Using_gspy_error.md)
 
 #### Log File Format
 

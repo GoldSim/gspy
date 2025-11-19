@@ -1,0 +1,19 @@
+{
+  "python_path": "C:\\Users\\JasonLillywhite\\AppData\\Local\\Programs\\Python\\Python314",
+  "script_path": "error_demo.py",
+  "function_name": "process_data",
+  "log_filename": "GSPy_error_demo.log",
+  "log_level": 3,
+  "inputs": [
+    {
+      "type": "scalar",
+      "dimensions": []
+    }
+  ],
+  "outputs": [
+    {
+      "type": "scalar",
+      "dimensions": []
+    }
+  ]
+}

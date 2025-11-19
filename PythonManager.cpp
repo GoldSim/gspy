@@ -34,6 +34,9 @@ static PyObject* pFunc = nullptr;
 // Python-Callable Logging Function
 // =================================================================
 
+// Global pointer to store error message for GoldSim (static - internal use only)
+static std::string* g_python_error_message = nullptr;
+
 // Python-callable logging function (static - internal use only)
 static PyObject* PythonLog(PyObject* self, PyObject* args) {
     const char* message;
@@ -66,9 +69,40 @@ static PyObject* PythonLog(PyObject* self, PyObject* args) {
     Py_RETURN_NONE;
 }
 
+// Python-callable error function that signals a fatal error to GoldSim
+// NOTE: For 64-bit DLLs running in separate process space, we cannot pass
+// pointers to GoldSim. Instead, we raise a Python exception that C++ will catch.
+static PyObject* PythonError(PyObject* self, PyObject* args) {
+    const char* message;
+    
+    // Parse arguments: message (required)
+    if (!PyArg_ParseTuple(args, "s", &message)) {
+        return nullptr;
+    }
+    
+    // Log the error
+    LogError(std::string(message));
+    
+    // Store the error message for GoldSim
+    if (g_python_error_message == nullptr) {
+        g_python_error_message = new std::string(message);
+    } else {
+        *g_python_error_message = message;
+    }
+    
+    LogDebug("gspy.error() called, message stored: " + std::string(message));
+    
+    // Raise a Python RuntimeError with the message
+    // This will cause PyObject_CallObject to return NULL, triggering our error handling
+    PyErr_SetString(PyExc_RuntimeError, message);
+    
+    return nullptr;  // Return NULL to indicate an exception occurred
+}
+
 // Method definition for the gspy module
 static PyMethodDef GSPyMethods[] = {
     {"log", PythonLog, METH_VARARGS, "Write a message to the GSPy log file"},
+    {"error", PythonError, METH_VARARGS, "Signal a fatal error to GoldSim and terminate the simulation"},
     {nullptr, nullptr, 0, nullptr} // Sentinel
 };
 
@@ -360,6 +394,12 @@ void FinalizePython() {
     Py_XDECREF(pFunc);
     Py_XDECREF(pModule);
 
+    // Clean up the error message pointer
+    if (g_python_error_message != nullptr) {
+        delete g_python_error_message;
+        g_python_error_message = nullptr;
+    }
+
     if (Py_IsInitialized()) {
         // LOGGING: Confirm that we are shutting down the interpreter.
         LogInfo("Shutting down Python interpreter.");
@@ -447,6 +487,33 @@ void ExecuteCalculation(double* inargs, double* outargs, std::string& errorMessa
     LogDebug("Calling Python function...");
     PyObject* pResultTuple = PyObject_CallObject(pFunc, pArgs);
     Py_DECREF(pArgs);
+
+    // 2.5. Check if Python raised an exception (including from gspy.error())
+    if (pResultTuple == nullptr) {
+        // Python exception occurred
+        if (g_python_error_message != nullptr && !g_python_error_message->empty()) {
+            // gspy.error() was called - use the stored message
+            errorMessage = "GSPy Error: " + *g_python_error_message;
+            LogDebug("Python signaled fatal error via gspy.error(): " + *g_python_error_message);
+            g_python_error_message->clear();
+        } else {
+            // Some other Python exception - get the error details
+            PyErr_Print();
+            errorMessage = "Python exception occurred (see log for details)";
+            LogError(errorMessage);
+        }
+        return;
+    }
+
+    // 2.6. Check if gspy.error() was called but Python still returned successfully
+    // (This shouldn't happen with the new implementation, but keep as safety check)
+    if (g_python_error_message != nullptr && !g_python_error_message->empty()) {
+        errorMessage = "GSPy Error: " + *g_python_error_message;
+        LogDebug("Python signaled fatal error: " + errorMessage);
+        g_python_error_message->clear();
+        Py_DECREF(pResultTuple);
+        return;
+    }
 
     // 3. Delegate result processing
     if (!MarshalOutputsToCpp(pResultTuple, config["outputs"], outargs, errorMessage)) {

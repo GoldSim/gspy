@@ -2,6 +2,86 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.8] - 2025-11-18
+
+### Added
+- **Fatal Error Signaling:** New `gspy.error()` function allows Python code to signal critical errors and stop GoldSim simulations
+  * **Function:** `gspy.error(message)` - Signals a fatal error and terminates the simulation
+  * **Use Case:** Critical errors where results would be invalid (division by zero, missing required data, invalid configuration)
+  * **Behavior:** Raises Python RuntimeError, C++ catches it, logs detailed error, sets status = 1, simulation stops
+  * **Error Details:** Full error message and Python traceback written to log file
+  * **GoldSim Display:** Shows "Error in external function. Return code 1." (generic message due to process separation)
+  * **Architecture Note:** 32-bit GoldSim / 64-bit DLL run in separate processes, preventing direct error message passing
+
+### Enhanced
+- **Error Handling Documentation:** Comprehensive documentation for both error handling approaches
+  * `docs/Using_gspy_error.md` - Quick start guide with examples
+  * `docs/Error_Handling_Best_Practices.md` - Complete guide with use cases and patterns
+  * `docs/Error_Handling_Quick_Reference.md` - Quick reference card
+  * `docs/Slide_Updates_Error_Handling.md` - Updated presentation content
+  * `docs/CHANGELOG_Error_Handling.md` - Detailed version history and migration guide
+  * `examples/Error Handling Demo/` - Working demonstration with test cases
+
+### Improved
+- **Exception Handling:** Added comprehensive try-catch blocks in main GSPy function
+  * Catches and logs C++ exceptions with detailed error messages
+  * Prevents crashes and provides better error diagnostics
+  * Ensures clean error reporting to GoldSim
+
+- **Python Exception Detection:** Enhanced ExecuteCalculation to properly handle Python exceptions
+  * Detects when Python raises exceptions (including from gspy.error())
+  * Retrieves stored error messages for detailed logging
+  * Provides fallback error handling for unexpected exceptions
+
+### Technical Details
+- **Implementation:** 
+  * Added `PythonError()` function that raises Python RuntimeError
+  * Added global error message storage (`g_python_error_message`)
+  * Modified `ExecuteCalculation()` to detect Python exceptions and retrieve stored messages
+  * Updated `SendErrorToGoldSim()` to use status = 1 (compatible with separate process architecture)
+  * Added exception handling wrapper in main `GSPy()` function
+  * Added cleanup in `FinalizePython()` for error message pointer
+
+- **Error Handling Flow:**
+  1. Python calls `gspy.error(message)`
+  2. Message stored in C++ and Python RuntimeError raised
+  3. C++ detects NULL return from Python
+  4. C++ retrieves stored message and logs it
+  5. C++ sets status = 1 (failure)
+  6. GoldSim detects failure and stops simulation
+  7. User checks log file for detailed error information
+
+- **Process Architecture:** Solution accounts for 32-bit GoldSim / 64-bit DLL separate process requirement
+  * Memory pointers cannot be shared across process boundaries
+  * Error messages written to log file instead of passed via pointers
+  * This is the correct approach for the 32-bit/64-bit architecture
+
+### Comparison: Error Handling Approaches
+
+| Approach | Function | Simulation | GoldSim Message | Details Location |
+|----------|----------|------------|-----------------|------------------|
+| **Graceful Degradation** | `gspy.log()` only | Continues | None | Log file |
+| **Fatal Error** | `gspy.error()` | **Stops** | "Return code 1" | Log file |
+
+### Migration Guide
+- **No breaking changes** - Existing code continues to work unchanged
+- **Optional enhancement** - Add `gspy.error()` for critical error handling
+- **Recommended pattern:**
+  ```python
+  try:
+      result = calculate(args)
+      return (result,)
+  except ValueError as e:
+      # Recoverable - use graceful degradation
+      gspy.log(f"Warning: {e}", 1)
+      return (default_value,)
+  except Exception as e:
+      # Critical - stop simulation
+      gspy.log(traceback.format_exc(), 0)
+      gspy.error(f"Fatal: {e}")
+      return (0.0,)
+  ```
+
 ## [1.8.7] - 2025-11-15
 
 ### Fixed

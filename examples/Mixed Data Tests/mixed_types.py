@@ -1,5 +1,6 @@
 import numpy as np
 import traceback
+import gspy
 
 def process_data(*args):
   """
@@ -15,6 +16,9 @@ def process_data(*args):
     ts_dict_1 = args[5]
     ts_dict_2 = args[6]
 
+    # Test logging functionality
+    gspy.log("Processing mixed data types", 2)  # INFO level
+
     # 2. Perform original calculations
     v1 = np.arange(4) + scalar_1
     v2 = np.array([np.mean(input_vector), np.sum(input_matrix)])
@@ -27,12 +31,27 @@ def process_data(*args):
 
     # 3. Generate NEW outputs (Time Series and Lookup Table)
     # Create a new Time Series by adding the data from the two input series
-    output_timeseries = {
-        "timestamps": ts_dict_1["timestamps"],
-        "data": ts_dict_1["data"] + ts_dict_2["data"],
-        "data_type": 0,
-        "time_basis": 0.0
-    }
+    # Use the timestamps from the input time series to ensure proper coverage
+    if len(ts_dict_1["timestamps"]) >= 2 and len(ts_dict_2["timestamps"]) >= 2:
+        # Both input time series are valid - add their data
+        # Use the timestamps from the first series (they should match)
+        output_timeseries = {
+            "timestamps": ts_dict_1["timestamps"],
+            "data": ts_dict_1["data"] + ts_dict_2["data"],
+            "data_type": ts_dict_1.get("data_type", 0),
+            "time_basis": ts_dict_1.get("time_basis", 0.0)
+        }
+    else:
+        # Fallback: create a minimal time series using the available input timestamps
+        # This ensures we match the simulation duration
+        max_time = max(ts_dict_1["timestamps"][-1] if len(ts_dict_1["timestamps"]) > 0 else 0.0,
+                       ts_dict_2["timestamps"][-1] if len(ts_dict_2["timestamps"]) > 0 else 0.0)
+        output_timeseries = {
+            "timestamps": np.array([0.0, max_time]),
+            "data": np.array([0.0, 0.0]),
+            "data_type": 0,
+            "time_basis": 0.0
+        }
 
     # Create a new 2D Lookup Table
     output_table = {
@@ -54,14 +73,21 @@ def process_data(*args):
     )
 
   except Exception as e:
-    print("!!! PYTHON EXCEPTION !!!")
-    print(traceback.format_exc())
+    # Log the error using GSPy's logging system
+    gspy.log(traceback.format_exc(), 0)
+    gspy.error(f"Error in mixed_types.py: {str(e)}")
     
     # In case of error, return a tuple of the correct size/shape with dummy values
+    # Try to get the max timestamp from input time series, or use a safe default
+    try:
+        max_time = max(args[5]["timestamps"][-1], args[6]["timestamps"][-1])
+    except:
+        max_time = 10.0  # Safe default
+    
     dummy_matrix = np.zeros((4, 2))
-    dummy_ts = {"timestamps": np.array([0]), "data": np.zeros(1), "data_type": 0, "time_basis": 0}
+    dummy_ts = {"timestamps": np.array([0.0, max_time]), "data": np.array([0.0, 0.0]), "data_type": 0, "time_basis": 0.0}
     dummy_scalar_1 = 0.0
-    dummy_table = {"table_dim": 1, "row_labels": np.zeros(1), "data": np.zeros(1)}
+    dummy_table = {"table_dim": 2, "row_labels": np.array([1.0, 2.0, 3.0]), "col_labels": np.array([10.0, 20.0]), "data": np.zeros((3, 2))}
     dummy_vector_1 = np.zeros(6)
     dummy_vector_2 = np.zeros(3)
     dummy_scalar_2 = 0.0
