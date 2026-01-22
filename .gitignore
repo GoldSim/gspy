@@ -45,9 +45,11 @@ __pycache__/
 GSPy_*.txt
 *_Test_log.txt
 
-# Test executables
+# Test executables and scripts
 tests/*.exe
 test_*.exe
+test_*.py
+TEST_RESULTS.md
 
 # Development scripts (but keep build_and_distribute.bat)
 copy_*.bat
