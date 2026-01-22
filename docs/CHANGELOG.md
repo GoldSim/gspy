@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.9] - 2026-01-22
+
+### Added
+- **Third-Party License Compliance:** Added comprehensive `THIRD_PARTY_LICENSES.md` file documenting all third-party dependencies
+  * **Python Software Foundation License** - Full PSF license text for Python C API
+  * **NumPy BSD 3-Clause License** - Complete BSD license text with copyright notices
+  * **nlohmann/json MIT License** - MIT license text for JSON parsing library
+  * Ensures full compliance with all open-source license requirements
+  * Provides clear attribution to all third-party library authors
+  * Documents runtime dependencies and their respective licenses
+
+### Changed
+- **License Documentation:** Enhanced legal compliance for public distribution
+  * All required copyright notices now properly included
+  * License texts provided in full as required by BSD 3-Clause and other licenses
+  * Clear separation between GSPy's MIT license and third-party licenses
+
+### Technical Details
+- Added `docs/THIRD_PARTY_LICENSES.md` with complete license texts for Python, NumPy, and nlohmann/json
+- Ensures compliance with permissive license requirements (attribution and notice retention)
+- No functional changes to code - purely documentation enhancement for legal compliance
+
 ## [1.8.8] - 2025-11-18
 
 ### Added

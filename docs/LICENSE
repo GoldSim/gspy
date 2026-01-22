@@ -52,6 +52,7 @@ THIRD-PARTY COMPONENTS:
 - This software may interact with Python libraries and GoldSim software
 - Users are responsible for compliance with all applicable third-party licenses
 - GoldSim Technology Group does not warrant or support third-party components
+- See THIRD_PARTY_LICENSES.md for complete third-party license information
 
 PROFESSIONAL USE NOTICE:
 - This software is not certified for life-safety, mission-critical, or 
