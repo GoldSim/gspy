@@ -35,15 +35,6 @@ All notable changes to this project will be documented in this file.
   * **GoldSim Display:** Shows "Error in external function. Return code 1." (generic message due to process separation)
   * **Architecture Note:** 32-bit GoldSim / 64-bit DLL run in separate processes, preventing direct error message passing
 
-### Enhanced
-- **Error Handling Documentation:** Comprehensive documentation for both error handling approaches
-  * `docs/Using_gspy_error.md` - Quick start guide with examples
-  * `docs/Error_Handling_Best_Practices.md` - Complete guide with use cases and patterns
-  * `docs/Error_Handling_Quick_Reference.md` - Quick reference card
-  * `docs/Slide_Updates_Error_Handling.md` - Updated presentation content
-  * `docs/CHANGELOG_Error_Handling.md` - Detailed version history and migration guide
-  * `examples/Error Handling Demo/` - Working demonstration with test cases
-
 ### Improved
 - **Exception Handling:** Added comprehensive try-catch blocks in main GSPy function
   * Catches and logs C++ exceptions with detailed error messages

@@ -55,6 +55,7 @@ tests/test_build.bat
 *.cmake
 CMakeFiles/
 CMakeCache.txt
+.kiro/
 
 # OS generated files
 .DS_Store
