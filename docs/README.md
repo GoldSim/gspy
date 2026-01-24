@@ -76,7 +76,32 @@ GSPy is a C++ bridge that allows GoldSim models to call external Python scripts.
 
 GSPy uses a modular, three-part architecture. The DLL acts as an interpreter and data marshaller between the two environments. A naming convention ensures that the correct DLL is always linked to the correct configuration file.
 
-`[GoldSim Model (*.gsm)] <--> [Renamed GSPy DLL (e.g., my_calc.dll)] <--> [Config File (my_calc.json)] & [Python Script (*.py)]`
+```mermaid
+graph LR
+    subgraph GoldSim_Environment [GoldSim Environment]
+        GSM["GoldSim Model<br/>(*.gsm)"]
+    end
+    
+    subgraph Interface_Layer [Interface Layer]
+        DLL["GSPy DLL<br/>(e.g., my_calc.dll)"]
+    end
+    
+    subgraph Python_Logic [Python Logic]
+        JSON["Config File<br/>(my_calc.json)"]
+        PY["Python Script<br/>(*.py)"]
+    end
+    
+    %% Connections
+    GSM <==>|"External Element Calls"| DLL
+    DLL <-->|"Loads Config"| JSON
+    DLL <-->|"Executes"| PY
+    
+    %% Styling
+    style GSM fill:#f9f,stroke:#333,stroke-width:2px
+    style DLL fill:#69f,stroke:#333,stroke-width:2px
+    style PY fill:#dfd,stroke:#333,stroke-width:1px
+    style JSON fill:#fff,stroke:#333,stroke-dasharray: 5 5
+```
 
 GSPy links three files together: the DLL, the JSON configuration, and the Python script.
 
