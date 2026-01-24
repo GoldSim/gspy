@@ -3,11 +3,19 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
+  
+  <!-- Validate that PYTHON_3_14_HOME is set -->
+  <Target Name="ValidatePythonHome" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(PYTHON_3_14_HOME)' == ''" 
+           Text="PYTHON_3_14_HOME environment variable is not set! Please set it to your Python 3.14 installation directory (e.g., C:\Python314)" />
+  </Target>
+  
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>
         $(PYTHON_3_14_HOME)\include;
         $(PYTHON_3_14_HOME)\Lib\site-packages\numpy\_core\include;
+        $(PYTHON_3_14_HOME)\Lib\site-packages\numpy\core\include;
         %(AdditionalIncludeDirectories)
       </AdditionalIncludeDirectories>
     </ClCompile>
@@ -16,7 +24,9 @@
         $(PYTHON_3_14_HOME)\libs;
         %(AdditionalLibraryDirectories)
       </AdditionalLibraryDirectories>
-      <AdditionalDependencies>python314.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <!-- Use Debug library for Debug builds, Release library for Release builds -->
+      <AdditionalDependencies Condition="'$(Configuration)'=='Debug'">python314_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)'=='Release'">python314.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />

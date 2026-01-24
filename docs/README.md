@@ -232,6 +232,44 @@ The release package includes:
 
 -----
 
+## Building from Source - Quick Setup
+
+If you're building GSPy from source, you need to set up environment variables first:
+
+**Step 1: Set Environment Variables**
+1. Press Windows key and search for "Environment Variables"
+2. Click "Edit the system environment variables"
+3. Click "Environment Variables..." button
+4. Under "System variables", click "New" and add:
+   - **Variable name**: `PYTHON_3_11_HOME`
+   - **Variable value**: Your Python 3.11 path (e.g., `C:\Users\YourName\AppData\Local\Programs\Python\Python311`)
+5. Click "New" again and add:
+   - **Variable name**: `PYTHON_3_14_HOME`
+   - **Variable value**: Your Python 3.14 path (e.g., `C:\Users\YourName\AppData\Local\Programs\Python\Python314`)
+6. Click OK to save
+
+**Step 2: Find Your Python Path**
+If you don't know your Python installation path, open Command Prompt and run:
+```cmd
+where python
+```
+Or check these common locations:
+- `C:\Users\[YourName]\AppData\Local\Programs\Python\Python311`
+- `C:\Users\[YourName]\AppData\Local\Programs\Python\Python314`
+- `C:\Python311` or `C:\Python314`
+
+**Step 3: Restart Visual Studio**
+Close and reopen Visual Studio for the environment variables to take effect.
+
+**Step 4: Build**
+1. Open `GSPy.sln` in Visual Studio
+2. Select "Release" and "x64" from the toolbar
+3. Build → Build Solution (or press F7)
+
+For detailed build instructions, see [Developer Documentation](#developer-documentation) below.
+
+-----
+
 ## Quick Start Guide
 
 This guide will run a simple "scalar in, scalar out" test.
